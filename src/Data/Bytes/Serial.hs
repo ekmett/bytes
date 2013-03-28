@@ -46,8 +46,10 @@ class Serial a where
 #endif
 
   deserialize :: MonadGet m => m a
+#ifndef HLINT
   default deserialize :: (MonadGet m, Generic a, GSerial (Rep a)) => m a
   deserialize = liftM to gdeserialize
+#endif
 
 instance Serial a => Serial [a]
 instance Serial a => Serial (Maybe a)
