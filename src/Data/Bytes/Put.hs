@@ -10,6 +10,12 @@
 -- Stability :  experimental
 -- Portability: non-portable
 --
+-- This module generalizes the @binary@ 'B.PutM' and @cereal@ 'S.PutM'
+-- monads in an ad hoc fashion to permit code to be written that is
+-- compatible across them.
+--
+-- Moreover, this class permits code to be written to be portable over
+-- various monad transformers applied to these as base monads.
 --------------------------------------------------------------------
 module Data.Bytes.Put
   ( MonadPut(..)
@@ -29,6 +35,7 @@ import qualified Data.Serialize.Put as S
 import Data.Word
 
 class Monad m => MonadPut m where
+  -- | Efficiently write a byte into the output buffer
   putWord8 :: Word8 -> m ()
 #ifndef HLINT
   default putWord8 :: (m ~ t n, MonadTrans t, MonadPut n) => Word8 -> m ()
@@ -36,6 +43,9 @@ class Monad m => MonadPut m where
   {-# INLINE putWord8 #-}
 #endif
 
+  -- | An efficient primitive to write a strict 'Strict.ByteString' into the output buffer.
+  --
+  -- In @binary@ this flushes the current buffer, and writes the argument into a new chunk.
   putByteString     :: Strict.ByteString -> m ()
 #ifndef HLINT
   default putByteString :: (m ~ t n, MonadTrans t, MonadPut n) => Strict.ByteString -> m ()
@@ -43,6 +53,9 @@ class Monad m => MonadPut m where
   {-# INLINE putByteString #-}
 #endif
 
+  -- | Write a lazy 'Lazy.ByteString' efficiently.
+  --
+  -- With @binary@, this simply appends the chunks to the output buffer
   putLazyByteString :: Lazy.ByteString -> m ()
 #ifndef HLINT
   default putLazyByteString :: (m ~ t n, MonadTrans t, MonadPut n) => Lazy.ByteString -> m ()
@@ -50,6 +63,10 @@ class Monad m => MonadPut m where
   {-# INLINE putLazyByteString #-}
 #endif
 
+  -- | Pop the 'ByteString' we have constructed so far, if any, yielding a
+  -- new chunk in the result 'ByteString'.
+  --
+  -- If we're building a strict 'Strict.ByteString' with @cereal@ then this does nothing.
   flush :: m ()
 #ifndef HLINT
   default flush :: (m ~ t n, MonadTrans t, MonadPut n) => m ()
@@ -57,6 +74,7 @@ class Monad m => MonadPut m where
   {-# INLINE flush #-}
 #endif
 
+  -- | Write a 'Word16' in little endian format
   putWord16le   :: Word16 -> m ()
 #ifndef HLINT
   default putWord16le :: (m ~ t n, MonadTrans t, MonadPut n) => Word16 -> m ()
@@ -64,6 +82,7 @@ class Monad m => MonadPut m where
   {-# INLINE putWord16le #-}
 #endif
 
+  -- | Write a 'Word16' in big endian format
   putWord16be   :: Word16 -> m ()
 #ifndef HLINT
   default putWord16be :: (m ~ t n, MonadTrans t, MonadPut n) => Word16 -> m ()
@@ -71,6 +90,8 @@ class Monad m => MonadPut m where
   {-# INLINE putWord16be #-}
 #endif
 
+  -- | /O(1)./ Write a 'Word16' in native host order and host endianness.
+  -- For portability issues see 'putWordhost'.
   putWord16host :: Word16 -> m ()
 #ifndef HLINT
   default putWord16host :: (m ~ t n, MonadTrans t, MonadPut n) => Word16 -> m ()
@@ -78,6 +99,7 @@ class Monad m => MonadPut m where
   {-# INLINE putWord16host #-}
 #endif
 
+  -- | Write a 'Word32' in little endian format
   putWord32le   :: Word32 -> m ()
 #ifndef HLINT
   default putWord32le :: (m ~ t n, MonadTrans t, MonadPut n) => Word32 -> m ()
@@ -85,6 +107,7 @@ class Monad m => MonadPut m where
   {-# INLINE putWord32le #-}
 #endif
 
+  -- | Write a 'Word32' in big endian format
   putWord32be   :: Word32 -> m ()
 #ifndef HLINT
   default putWord32be :: (m ~ t n, MonadTrans t, MonadPut n) => Word32 -> m ()
@@ -92,6 +115,8 @@ class Monad m => MonadPut m where
   {-# INLINE putWord32be #-}
 #endif
 
+  -- | /O(1)./ Write a 'Word32' in native host order and host endianness.
+  -- For portability issues see @putWordhost@.
   putWord32host :: Word32 -> m ()
 #ifndef HLINT
   default putWord32host :: (m ~ t n, MonadTrans t, MonadPut n) => Word32 -> m ()
@@ -99,6 +124,7 @@ class Monad m => MonadPut m where
   {-# INLINE putWord32host #-}
 #endif
 
+  -- | Write a 'Word64' in little endian format
   putWord64le   :: Word64 -> m ()
 #ifndef HLINT
   default putWord64le :: (m ~ t n, MonadTrans t, MonadPut n) => Word64 -> m ()
@@ -106,6 +132,7 @@ class Monad m => MonadPut m where
   {-# INLINE putWord64le #-}
 #endif
 
+  -- | Write a 'Word64' in big endian format
   putWord64be   :: Word64 -> m ()
 #ifndef HLINT
   default putWord64be :: (m ~ t n, MonadTrans t, MonadPut n) => Word64 -> m ()
@@ -113,6 +140,8 @@ class Monad m => MonadPut m where
   {-# INLINE putWord64be #-}
 #endif
 
+  -- | /O(1)./ Write a 'Word64' in native host order and host endianness.
+  -- For portability issues see @putWordhost@.
   putWord64host :: Word64 -> m ()
 #ifndef HLINT
   default putWord64host :: (m ~ t n, MonadTrans t, MonadPut n) => Word64 -> m ()
@@ -120,7 +149,13 @@ class Monad m => MonadPut m where
   {-# INLINE putWord64host #-}
 #endif
 
-  putWordhost   :: Word   -> m ()
+
+  -- | /O(1)./ Write a single native machine word. The word is
+  -- written in host order, host endian form, for the machine you're on.
+  -- On a 64 bit machine the Word is an 8 byte value, on a 32 bit machine,
+  -- 4 bytes. Values written this way are not portable to
+  -- different endian or word sized machines, without conversion.
+  putWordhost :: Word -> m ()
 #ifndef HLINT
   default putWordhost :: (m ~ t n, MonadTrans t, MonadPut n) => Word -> m ()
   putWordhost = lift . putWordhost

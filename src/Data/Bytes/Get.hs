@@ -10,6 +10,12 @@
 -- Stability :  experimental
 -- Portability: type-families
 --
+-- This module generalizes the @binary@ 'B.Get' and @cereal@ 'S.Get'
+-- monads in an ad hoc fashion to permit code to be written that is
+-- compatible across them.
+--
+-- Moreover, this class permits code to be written to be portable over
+-- various monad transformers applied to these as base monads.
 --------------------------------------------------------------------
 module Data.Bytes.Get
   ( MonadGet(..)
@@ -30,121 +36,159 @@ import qualified Data.Serialize.Get as S
 import Data.Word
 
 class (Integral (Unchecked m), Monad m) => MonadGet m where
+  -- | An 'Integral' number type used for unchecked skips and counting.
   type Unchecked m :: *
+
+  -- | The underlying ByteString type used by this instance
   type Bytes m :: *
 
+  -- | Skip ahead @n@ bytes. Fails if fewer than @n@ bytes are available.
   skip :: Int -> m ()
 #ifndef HLINT
   default skip :: (MonadTrans t, MonadGet n, m ~ t n) => Int -> m ()
   skip = lift . skip
 #endif
 
+  -- | Skip ahead @n@ bytes. No error if there isn't enough bytes.
   uncheckedSkip :: Unchecked m -> m ()
 #ifndef HLINT
   default uncheckedSkip :: (MonadTrans t, MonadGet n, m ~ t n) => Unchecked n -> m ()
   uncheckedSkip = lift . uncheckedSkip
 #endif
 
+  -- | Run @ga@, but return without consuming its input.
+  -- Fails if @ga@ fails.
   lookAhead :: m a -> m a
+
+  -- | Like 'lookAhead', but consume the input if @gma@ returns 'Just _'.
+  -- Fails if @gma@ fails.
   lookAheadM :: m (Maybe a) -> m (Maybe a)
+
+  -- | Like 'lookAhead', but consume the input if @gea@ returns 'Right _'.
+  -- Fails if @gea@ fails.
   lookAheadE :: m (Either a b) -> m (Either a b)
 
+  -- | Get the next up to @n@ bytes as a lazy ByteString, without consuming them.
   uncheckedLookAhead :: Unchecked m -> m (Bytes m)
 #ifndef HLINT
   default uncheckedLookAhead :: (MonadTrans t, MonadGet n, m ~ t n) => Unchecked n -> m (Bytes n)
   uncheckedLookAhead = lift . uncheckedLookAhead
 #endif
 
+  -- | Pull @n@ bytes from the input, as a strict ByteString.
   getBytes :: Int -> m Strict.ByteString
 #ifndef HLINT
   default getBytes :: (MonadTrans t, MonadGet n, m ~ t n) => Int -> m Strict.ByteString
   getBytes = lift . getBytes
 #endif
 
+  -- | Get the number of remaining unparsed bytes.
+  -- Useful for checking whether all input has been consumed.
+  -- Note that this forces the rest of the input.
   remaining :: m (Unchecked m)
 #ifndef HLINT
   default remaining :: (MonadTrans t, MonadGet n, m ~ t n) => m (Unchecked n)
   remaining = lift remaining
 #endif
 
+  -- | Test whether all input has been consumed,
+  -- i.e. there are no remaining unparsed bytes.
   isEmpty :: m Bool
 #ifndef HLINT
   default isEmpty :: (MonadTrans t, MonadGet n, m ~ t n) => m Bool
   isEmpty = lift isEmpty
 #endif
 
+  -- | Read a Word8 from the monad state
   getWord8 :: m Word8
 #ifndef HLINT
   default getWord8 :: (MonadTrans t, MonadGet n, m ~ t n) => m Word8
   getWord8 = lift getWord8
 #endif
 
+  -- | An efficient 'get' method for strict ByteStrings. Fails if fewer
+  -- than @n@ bytes are left in the input.
   getByteString :: Int -> m Strict.ByteString
 #ifndef HLINT
   default getByteString :: (MonadTrans t, MonadGet n, m ~ t n) => Int -> m Strict.ByteString
   getByteString = lift . getByteString
 #endif
 
+  -- | An efficient 'get' method for lazy ByteStrings. Does not fail if fewer than
+  -- @n@ bytes are left in the input.
   getLazyByteString :: Int64 -> m Lazy.ByteString
 #ifndef HLINT
   default getLazyByteString :: (MonadTrans t, MonadGet n, m ~ t n) => Int64 -> m Lazy.ByteString
   getLazyByteString = lift . getLazyByteString
 #endif
 
+  -- | Read a 'Word16' in big endian format
   getWord16be   :: m Word16
 #ifndef HLINT
   default getWord16be :: (MonadTrans t, MonadGet n, m ~ t n) => m Word16
   getWord16be = lift getWord16be
 #endif
 
+  -- | Read a 'Word16' in little endian format
   getWord16le   :: m Word16
 #ifndef HLINT
   default getWord16le :: (MonadTrans t, MonadGet n, m ~ t n) => m Word16
   getWord16le = lift getWord16le
 #endif
 
+  -- | /O(1)./ Read a 2 byte 'Word16' in native host order and host endianness.
   getWord16host :: m Word16
 #ifndef HLINT
   default getWord16host :: (MonadTrans t, MonadGet n, m ~ t n) => m Word16
   getWord16host = lift getWord16host
 #endif
 
+  -- | Read a 'Word32' in big endian format
   getWord32be   :: m Word32
 #ifndef HLINT
   default getWord32be :: (MonadTrans t, MonadGet n, m ~ t n) => m Word32
   getWord32be = lift getWord32be
 #endif
 
+  -- | Read a 'Word32' in little endian format
   getWord32le   :: m Word32
 #ifndef HLINT
   default getWord32le :: (MonadTrans t, MonadGet n, m ~ t n) => m Word32
   getWord32le = lift getWord32le
 #endif
 
+  -- | /O(1)./ Read a 'Word32' in native host order and host endianness.
   getWord32host :: m Word32
 #ifndef HLINT
   default getWord32host :: (MonadTrans t, MonadGet n, m ~ t n) => m Word32
   getWord32host = lift getWord32host
 #endif
 
+  -- | Read a 'Word64' in big endian format
   getWord64be   :: m Word64
 #ifndef HLINT
   default getWord64be :: (MonadTrans t, MonadGet n, m ~ t n) => m Word64
   getWord64be = lift getWord64be
 #endif
 
+
+  -- | Read a 'Word64' in little endian format
   getWord64le   :: m Word64
 #ifndef HLINT
   default getWord64le :: (MonadTrans t, MonadGet n, m ~ t n) => m Word64
   getWord64le = lift getWord64le
 #endif
 
+  -- | /O(1)./ Read a 'Word64' in native host order and host endianess.
   getWord64host :: m Word64
 #ifndef HLINT
   default getWord64host :: (MonadTrans t, MonadGet n, m ~ t n) => m Word64
   getWord64host = lift getWord64host
 #endif
 
+  -- | /O(1)./ Read a single native machine word. The word is read in
+  -- host order, host endian form, for the machine you're on. On a 64 bit
+  -- machine the Word is an 8 byte value, on a 32 bit machine, 4 bytes.
   getWordhost :: m Word
 #ifndef HLINT
   default getWordhost :: (MonadTrans t, MonadGet n, m ~ t n) => m Word
