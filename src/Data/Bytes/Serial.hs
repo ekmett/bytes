@@ -25,6 +25,7 @@ module Data.Bytes.Serial
   , GSerial(..)
   , Serial1(..), serialize1, deserialize1
   , GSerial1(..)
+  , Serial2(..), serialize2, deserialize2
   ) where
 
 import Control.Monad
@@ -211,3 +212,31 @@ instance GSerial1 f => GSerial1 (M1 i c f) where
 instance Serial a => GSerial1 (K1 i a) where
   gserializeWith _ (K1 x) = serialize x
   gdeserializeWith _ = liftM K1 deserialize
+
+------------------------------------------------------------------------------
+-- Higher-Rank Serialization
+------------------------------------------------------------------------------
+
+class Serial2 f where
+  serializeWith2 :: MonadPut m => (a -> m ()) -> (b -> m ()) -> f a b -> m ()
+  deserializeWith2 :: MonadGet m => m a -> m b ->  m (f a b)
+
+serialize2 :: (MonadPut m, Serial2 f, Serial a, Serial b) => f a b -> m ()
+serialize2 = serializeWith2 serialize serialize
+{-# INLINE serialize2 #-}
+
+deserialize2 :: (MonadGet m, Serial2 f, Serial a, Serial b) => m (f a b)
+deserialize2 = deserializeWith2 deserialize deserialize
+{-# INLINE deserialize2 #-}
+
+instance Serial2 Either where
+  serializeWith2 f _ (Left x)  = putWord8 0 >> f x
+  serializeWith2 _ g (Right y) = putWord8 1 >> g y
+  deserializeWith2 m n = getWord8 >>= \a -> case a of
+    0 -> liftM Left m
+    1 -> liftM Right n
+    _ -> fail "Missing case"
+
+instance Serial2 (,) where
+  serializeWith2 f g (a, b) = f a >> g b
+  deserializeWith2 m n = liftM2 (,) m n
