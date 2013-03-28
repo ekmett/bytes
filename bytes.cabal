@@ -75,4 +75,4 @@ test-suite doctests
       filepath       >= 1.2
 
   if impl(ghc<7.6.1)
-    ghcd-options: -Werror
+    ghc-options: -Werror
