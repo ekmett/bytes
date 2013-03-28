@@ -60,8 +60,10 @@ class (Integral (Unchecked m), Monad m, Applicative m) => MonadGet m where
   -- | If at least @n@ bytes are available return at least that much of the current input.
   -- Otherwise fail.
   ensure :: Int -> m Strict.ByteString
+#ifndef HLINT
   default ensure :: (MonadTrans t, MonadGet n, m ~ t n) => Int -> m Strict.ByteString
   ensure = lift . ensure
+#endif
 
   -- | Run @ga@, but return without consuming its input.
   -- Fails if @ga@ fails.
