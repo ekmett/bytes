@@ -2,6 +2,9 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 --------------------------------------------------------------------
 -- |
 -- Copyright :  (c) Edward Kmett 2013
@@ -19,6 +22,9 @@
 --------------------------------------------------------------------
 module Data.Bytes.Put
   ( MonadPut(..)
+  , puts
+  , Serializable(..)
+  , GSerializable(..)
   ) where
 
 import Control.Monad.Reader
@@ -31,8 +37,15 @@ import Control.Monad.Writer.Strict as Strict
 import qualified Data.Binary.Put as B
 import Data.ByteString as Strict
 import Data.ByteString.Lazy as Lazy
+import Data.Foldable as Foldable
+import Data.Int
 import qualified Data.Serialize.Put as S
 import Data.Word
+import GHC.Generics
+
+------------------------------------------------------------------------------
+-- MonadPut
+------------------------------------------------------------------------------
 
 class Monad m => MonadPut m where
   -- | Efficiently write a byte into the output buffer
@@ -229,3 +242,135 @@ instance (MonadPut m, Monoid w) => MonadPut (Lazy.WriterT w m)
 instance (MonadPut m, Monoid w) => MonadPut (Strict.WriterT w m)
 instance (MonadPut m, Monoid w) => MonadPut (Lazy.RWST r w s m)
 instance (MonadPut m, Monoid w) => MonadPut (Strict.RWST r w s m)
+
+puts :: MonadPut m => (a -> m ()) -> [a] -> m ()
+puts f xs = serialize (Prelude.length xs) >> Foldable.mapM_ f xs
+{-# INLINE puts #-}
+
+------------------------------------------------------------------------------
+-- Serializable
+------------------------------------------------------------------------------
+
+
+class Serializable a where
+  serialize :: MonadPut m => a -> m ()
+#ifndef HLINT
+  default serialize :: (MonadPut m, GSerializable (Rep a), Generic a) => a -> m ()
+  serialize = gserialize . from
+#endif
+
+instance Serializable a => Serializable [a]
+instance Serializable a => Serializable (Maybe a)
+instance (Serializable a, Serializable b) => Serializable (Either a b)
+
+instance Serializable Bool where
+
+instance Serializable Char where
+  serialize = putWord32host . fromIntegral . fromEnum
+
+instance Serializable Word where
+  serialize = putWordhost
+
+instance Serializable Word64 where
+  serialize = putWord64host
+
+instance Serializable Word32 where
+  serialize = putWord32host
+
+instance Serializable Word16 where
+  serialize = putWord16host
+
+instance Serializable Word8 where
+  serialize = putWord8
+
+instance Serializable Int where
+  serialize = putWordhost . fromIntegral
+
+instance Serializable Int64 where
+  serialize = putWord64host . fromIntegral
+
+instance Serializable Int32 where
+  serialize = putWord32host . fromIntegral
+
+instance Serializable Int16 where
+  serialize = putWord16host . fromIntegral
+
+instance Serializable Int8 where
+  serialize = putWord8 . fromIntegral
+
+------------------------------------------------------------------------------
+-- GSerializable
+------------------------------------------------------------------------------
+
+-- | Used internally to provide generic serialization
+class GSerializable f where
+  gserialize :: MonadPut m => f a -> m ()
+
+instance GSerializable U1 where
+  gserialize U1 = return ()
+
+instance GSerializable V1 where
+  gserialize _ = fail "I looked into the void. It looked back"
+
+instance (GSerializable f, GSerializable g) => GSerializable (f :*: g) where
+  gserialize (f :*: g) = do
+    gserialize f
+    gserialize g
+
+instance (GSerializable f, GSerializable g) => GSerializable (f :+: g) where
+  gserialize (L1 x) = putWord8 0 >> gserialize x
+  gserialize (R1 y) = putWord8 0 >> gserialize y
+
+instance GSerializable f => GSerializable (M1 i c f) where
+  gserialize (M1 x) = gserialize x
+
+instance Serializable a => GSerializable (K1 i a) where
+  gserialize (K1 x) = serialize x
+
+------------------------------------------------------------------------------
+-- Serializable1
+------------------------------------------------------------------------------
+
+class Serializable1 f where
+  serialize1 :: (MonadPut m, Serializable a) => f a -> m ()
+#ifndef HLINT
+  default serialize1 :: (MonadPut m, GSerializable1 (Rep1 f), Serializable a, Generic1 f) => f a -> m ()
+  serialize1 = gserialize1 . from1
+#endif
+
+------------------------------------------------------------------------------
+-- GSerializable1
+------------------------------------------------------------------------------
+
+-- | Used internally to provide generic serialization
+class GSerializable1 f where
+  gserialize1 :: (MonadPut m, Serializable a) => f a -> m ()
+
+instance GSerializable1 Par1 where
+  gserialize1 (Par1 a) = serialize a
+
+instance GSerializable1 f => GSerializable1 (Rec1 f) where
+  gserialize1 (Rec1 fa) = gserialize1 fa
+
+-- instance (Serializable1 f, GSerializable1 g) => GSerializable1 (f :.: g) where
+
+instance GSerializable1 U1 where
+  gserialize1 U1 = return ()
+
+instance GSerializable1 V1 where
+  gserialize1 _ = fail "I looked into the void. It looked back"
+
+instance (GSerializable1 f, GSerializable1 g) => GSerializable1 (f :*: g) where
+  gserialize1 (f :*: g) = do
+    gserialize1 f
+    gserialize1 g
+
+instance (GSerializable1 f, GSerializable1 g) => GSerializable1 (f :+: g) where
+  gserialize1 (L1 x) = putWord8 0 >> gserialize1 x
+  gserialize1 (R1 y) = putWord8 0 >> gserialize1 y
+
+instance GSerializable f => GSerializable1 (M1 i c f) where
+  gserialize1 (M1 x) = gserialize x
+
+instance Serializable a => GSerializable1 (K1 i a) where
+  gserialize1 (K1 x) = serialize x
