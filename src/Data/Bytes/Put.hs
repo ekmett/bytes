@@ -34,11 +34,8 @@ import Control.Monad.Writer.Strict as Strict
 import qualified Data.Binary.Put as B
 import Data.ByteString as Strict
 import Data.ByteString.Lazy as Lazy
-import Data.Foldable as Foldable
-import Data.Int
 import qualified Data.Serialize.Put as S
 import Data.Word
-import GHC.Generics
 
 ------------------------------------------------------------------------------
 -- MonadPut
