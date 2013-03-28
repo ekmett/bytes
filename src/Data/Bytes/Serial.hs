@@ -55,6 +55,10 @@ class Serial a where
 instance Serial a => Serial [a]
 instance Serial a => Serial (Maybe a)
 instance (Serial a, Serial b) => Serial (Either a b)
+instance (Serial a, Serial b) => Serial (a, b)
+instance (Serial a, Serial b, Serial c) => Serial (a, b, c)
+instance (Serial a, Serial b, Serial c, Serial d) => Serial (a, b, c, d)
+instance (Serial a, Serial b, Serial c, Serial d, Serial e) => Serial (a, b, c, d, e)
 
 instance Serial Bool
 
@@ -158,6 +162,36 @@ class Serial1 f where
   deserializeWith f = liftM to1 (gdeserializeWith f)
 #endif
 
+instance Serial1 [] where
+  serializeWith _ [] = putWord8 0
+  serializeWith f (x:xs) = putWord8 1 >> f x >> serializeWith f xs
+  deserializeWith m = getWord8 >>= \a -> case a of
+    0 -> return []
+    1 -> liftM2 (:) m (deserializeWith m)
+    _ -> error "[].deserializeWith: Missing case"
+instance Serial1 Maybe where
+  serializeWith _ Nothing = putWord8 0
+  serializeWith f (Just a) = putWord8 1 >> f a
+  deserializeWith m = getWord8 >>= \a -> case a of
+    0 -> return Nothing
+    1 -> liftM Just m
+    _ -> error "Maybe.deserializeWith: Missing case"
+instance Serial a => Serial1 (Either a) where
+  serializeWith = serializeWith2 serialize
+  deserializeWith = deserializeWith2 deserialize
+instance Serial a => Serial1 ((,) a) where
+  serializeWith = serializeWith2 serialize
+  deserializeWith = deserializeWith2 deserialize
+instance (Serial a, Serial b) => Serial1 ((,,) a b) where
+  serializeWith = serializeWith2 serialize
+  deserializeWith = deserializeWith2 deserialize
+instance (Serial a, Serial b, Serial c) => Serial1 ((,,,) a b c) where
+  serializeWith = serializeWith2 serialize
+  deserializeWith = deserializeWith2 deserialize
+instance (Serial a, Serial b, Serial c, Serial d) => Serial1 ((,,,,) a b c d) where
+  serializeWith = serializeWith2 serialize
+  deserializeWith = deserializeWith2 deserialize
+
 serialize1 :: (MonadPut m, Serial1 f, Serial a) => f a -> m ()
 serialize1 = serializeWith serialize
 {-# INLINE serialize1 #-}
@@ -240,3 +274,15 @@ instance Serial2 Either where
 instance Serial2 (,) where
   serializeWith2 f g (a, b) = f a >> g b
   deserializeWith2 m n = liftM2 (,) m n
+
+instance Serial a => Serial2 ((,,) a) where
+  serializeWith2 f g (a, b, c) = serialize a >> f b >> g c
+  deserializeWith2 m n = liftM3 (,,) deserialize m n
+
+instance (Serial a, Serial b) => Serial2 ((,,,) a b) where
+  serializeWith2 f g (a, b, c, d) = serialize a >> serialize b >> f c >> g d
+  deserializeWith2 m n = liftM4 (,,,) deserialize deserialize m n
+
+instance (Serial a, Serial b, Serial c) => Serial2 ((,,,,) a b c) where
+  serializeWith2 f g (a, b, c, d, e) = serialize a >> serialize b >> serialize c >> f d >> g e
+  deserializeWith2 m n = liftM5 (,,,,) deserialize deserialize deserialize m n

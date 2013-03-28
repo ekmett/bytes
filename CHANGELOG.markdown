@@ -1,6 +1,6 @@
-0.2.1
+0.3
 -----
-* Added `Serial2`.
+* Added `Serial2` and various missing `Serial1` instances.
 
 0.2
 ---
