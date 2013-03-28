@@ -1,3 +1,7 @@
+0.4
+---
+* Added a missing () instance
+
 0.3
 -----
 * Added `Serial2` and various missing `Serial1` instances.

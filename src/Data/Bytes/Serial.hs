@@ -52,6 +52,7 @@ class Serial a where
   deserialize = liftM to gdeserialize
 #endif
 
+instance Serial ()
 instance Serial a => Serial [a]
 instance Serial a => Serial (Maybe a)
 instance (Serial a, Serial b) => Serial (Either a b)
