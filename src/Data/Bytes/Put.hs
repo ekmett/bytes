@@ -319,7 +319,7 @@ instance (GSerializable f, GSerializable g) => GSerializable (f :*: g) where
 
 instance (GSerializable f, GSerializable g) => GSerializable (f :+: g) where
   gserialize (L1 x) = putWord8 0 >> gserialize x
-  gserialize (R1 y) = putWord8 0 >> gserialize y
+  gserialize (R1 y) = putWord8 1 >> gserialize y
 
 instance GSerializable f => GSerializable (M1 i c f) where
   gserialize (M1 x) = gserialize x
