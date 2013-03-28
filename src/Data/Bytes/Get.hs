@@ -57,6 +57,12 @@ class (Integral (Unchecked m), Monad m, Applicative m) => MonadGet m where
   uncheckedSkip = lift . uncheckedSkip
 #endif
 
+  -- | If at least @n@ bytes are available return at least that much of the current input.
+  -- Otherwise fail.
+  ensure :: Int -> m Strict.ByteString
+  default ensure :: (MonadTrans t, MonadGet n, m ~ t n) => Int -> m Strict.ByteString
+  ensure = lift . ensure
+
   -- | Run @ga@, but return without consuming its input.
   -- Fails if @ga@ fails.
   lookAhead :: m a -> m a
@@ -211,6 +217,11 @@ instance MonadGet B.Get where
   {-# INLINE lookAheadE #-}
   uncheckedLookAhead = B.uncheckedLookAhead
   {-# INLINE uncheckedLookAhead #-}
+  ensure n = do
+    bs <- lookAhead $ getByteString n
+    unless (Strict.length bs >= n) $ fail "ensure: Required more bytes"
+    return bs
+  {-# INLINE ensure #-}
   getBytes = B.getBytes
   {-# INLINE getBytes #-}
   remaining = B.remaining
@@ -261,6 +272,8 @@ instance MonadGet S.Get where
   {-# INLINE uncheckedLookAhead #-}
   getBytes = S.getBytes
   {-# INLINE getBytes #-}
+  ensure = S.ensure
+  {-# INLINE ensure #-}
   remaining = S.remaining
   {-# INLINE remaining #-}
   isEmpty = S.isEmpty

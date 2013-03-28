@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 704
 {-# LANGUAGE Trustworthy #-}
@@ -40,6 +41,7 @@ import Data.ByteString.Lazy as Lazy
 import Data.ByteString as Strict
 import Data.Int
 import Data.Word
+import Foreign.ForeignPtr
 import Foreign.Ptr
 import Foreign.Storable
 import GHC.Generics
@@ -89,14 +91,16 @@ store :: (MonadPut m, Storable a) => a -> m ()
 store a = putByteString bs
   where bs = unsafePerformIO $ create (sizeOf a) $ \ p -> poke (castPtr p) a
 
-restore :: (MonadGet m, Storable a) => m a
-restore = error "TODO"
--- restore = unsafePerformIO $
+restore :: forall m a. (MonadGet m, Storable a) => m a
+restore = do
+  let required = sizeOf (undefined :: a)
+  PS fp o n <- getByteString required
+  unless (n >= required) $ fail "restore: Required more bytes"
+  return $ unsafePerformIO $ withForeignPtr fp $ \p -> peekByteOff p o
 
 instance Serial Double where
   serialize = store
   deserialize = restore
-  -- deserialize = restore
 
 instance Serial Float where
   serialize = store
