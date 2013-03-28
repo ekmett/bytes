@@ -5,6 +5,9 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 704
+{-# LANGUAGE Trustworthy #-}
+#endif
 --------------------------------------------------------------------
 -- |
 -- Copyright :  (c) Edward Kmett 2013
@@ -26,14 +29,19 @@ module Data.Bytes.Serial
   , Serial1(..), serialize1, deserialize1
   , GSerial1(..)
   , Serial2(..), serialize2, deserialize2
+  , store, restore
   ) where
 
 import Control.Monad
 import Data.Bytes.Get
 import Data.Bytes.Put
+import Data.ByteString.Internal
 import Data.Int
 import Data.Word
+import Foreign.Ptr
+import Foreign.Storable
 import GHC.Generics
+import System.IO.Unsafe
 
 ------------------------------------------------------------------------------
 -- Serialization
@@ -62,6 +70,23 @@ instance (Serial a, Serial b, Serial c, Serial d) => Serial (a, b, c, d)
 instance (Serial a, Serial b, Serial c, Serial d, Serial e) => Serial (a, b, c, d, e)
 
 instance Serial Bool
+
+store :: (MonadPut m, Storable a) => a -> m ()
+store a = putByteString bs
+  where bs = unsafePerformIO $ create (sizeOf a) $ \ p -> poke (castPtr p) a
+
+restore :: (MonadGet m, Storable a) => m a
+restore = error "TODO"
+-- restore = unsafePerformIO $
+
+instance Serial Double where
+  serialize = store
+  deserialize = restore
+  -- deserialize = restore
+
+instance Serial Float where
+  serialize = store
+  deserialize = restore
 
 instance Serial Char where
   serialize = putWord32host . fromIntegral . fromEnum
