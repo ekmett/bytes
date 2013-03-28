@@ -36,6 +36,8 @@ import Control.Monad
 import Data.Bytes.Get
 import Data.Bytes.Put
 import Data.ByteString.Internal
+import Data.ByteString.Lazy as Lazy
+import Data.ByteString as Strict
 import Data.Int
 import Data.Word
 import Foreign.Ptr
@@ -59,6 +61,18 @@ class Serial a where
   default deserialize :: (MonadGet m, Generic a, GSerial (Rep a)) => m a
   deserialize = liftM to gdeserialize
 #endif
+
+instance Serial Strict.ByteString where
+  serialize bs = putWord32host (fromIntegral (Strict.length bs)) >> putByteString bs
+  deserialize = do
+    n <- getWord32host
+    getByteString (fromIntegral n)
+
+instance Serial Lazy.ByteString where
+  serialize bs = putWord64host (fromIntegral (Lazy.length bs)) >> putLazyByteString bs
+  deserialize = do
+    n <- getWord64host
+    getLazyByteString (fromIntegral n)
 
 instance Serial ()
 instance Serial a => Serial [a]
