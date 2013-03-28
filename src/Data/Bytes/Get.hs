@@ -21,6 +21,7 @@ module Data.Bytes.Get
   ( MonadGet(..)
   ) where
 
+import Control.Applicative
 import Control.Monad.Reader
 import Control.Monad.RWS.Lazy as Lazy
 import Control.Monad.RWS.Strict as Strict
@@ -35,7 +36,7 @@ import Data.Int
 import qualified Data.Serialize.Get as S
 import Data.Word
 
-class (Integral (Unchecked m), Monad m) => MonadGet m where
+class (Integral (Unchecked m), Monad m, Applicative m) => MonadGet m where
   -- | An 'Integral' number type used for unchecked skips and counting.
   type Unchecked m :: *
 

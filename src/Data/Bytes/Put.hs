@@ -24,6 +24,7 @@ module Data.Bytes.Put
   ( MonadPut(..)
   ) where
 
+import Control.Applicative
 import Control.Monad.Reader
 import Control.Monad.RWS.Lazy as Lazy
 import Control.Monad.RWS.Strict as Strict
@@ -41,7 +42,7 @@ import Data.Word
 -- MonadPut
 ------------------------------------------------------------------------------
 
-class Monad m => MonadPut m where
+class (Applicative m, Monad m) => MonadPut m where
   -- | Efficiently write a byte into the output buffer
   putWord8 :: Word8 -> m ()
 #ifndef HLINT
