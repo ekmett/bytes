@@ -52,6 +52,7 @@ library
 
   exposed-modules:
     Data.Bytes.Get
+    Data.Bytes.Serial
     Data.Bytes.Put
 
   if flag(lib-Werror)
