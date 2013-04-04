@@ -40,6 +40,7 @@ import Data.ByteString.Internal
 import Data.ByteString.Lazy as Lazy
 import Data.ByteString as Strict
 import Data.Int
+import Data.Void
 import Data.Word
 import Foreign.ForeignPtr
 import Foreign.Ptr
@@ -149,6 +150,10 @@ instance Serial Int16 where
 instance Serial Int8 where
   serialize = putWord8 . fromIntegral
   deserialize = liftM fromIntegral getWord8
+
+instance Serial Void where
+  serialize = absurd
+  deserialize = fail "I looked into the void."
 
 ------------------------------------------------------------------------------
 -- Generic Serialization

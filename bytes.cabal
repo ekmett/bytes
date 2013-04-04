@@ -1,6 +1,6 @@
 name:          bytes
 category:      Data, Serialization
-version:       0.5.1
+version:       0.6
 license:       BSD3
 cabal-version: >= 1.8
 license-file:  LICENSE
@@ -48,7 +48,8 @@ library
     ghc-prim,
     mtl                       >= 2.0      && < 2.2,
     transformers              >= 0.2      && < 0.4,
-    transformers-compat       >= 0.1      && < 1
+    transformers-compat       >= 0.1      && < 1,
+    void                      >= 0.6      && < 0.7
 
   exposed-modules:
     Data.Bytes.Get
