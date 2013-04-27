@@ -40,6 +40,10 @@ import Data.ByteString.Internal
 import Data.ByteString.Lazy as Lazy
 import Data.ByteString as Strict
 import Data.Int
+import Data.Text as SText
+import Data.Text.Encoding as SText
+import Data.Text.Lazy as LText
+import Data.Text.Lazy.Encoding as LText
 import Data.Void
 import Data.Word
 import Foreign.ForeignPtr
@@ -76,6 +80,14 @@ instance Serial Lazy.ByteString where
   deserialize = do
     n <- getWord64host
     getLazyByteString (fromIntegral n)
+
+instance Serial SText.Text where
+  serialize = serialize . SText.encodeUtf8
+  deserialize = SText.decodeUtf8 `fmap` deserialize
+
+instance Serial LText.Text where
+  serialize = serialize . LText.encodeUtf8
+  deserialize = LText.decodeUtf8 `fmap` deserialize
 
 instance Serial ()
 instance Serial a => Serial [a]
