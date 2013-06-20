@@ -34,12 +34,18 @@ module Data.Bytes.Serial
   ) where
 
 import Control.Monad
+import qualified Data.Foldable as F
 import Data.Bytes.Get
 import Data.Bytes.Put
 import Data.ByteString.Internal
 import Data.ByteString.Lazy as Lazy
 import Data.ByteString as Strict
 import Data.Int
+import qualified Data.IntMap as IMap
+import qualified Data.IntSet as ISet
+import qualified Data.Map as Map
+import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import Data.Text as SText
 import Data.Text.Encoding as SText
 import Data.Text.Lazy as LText
@@ -167,6 +173,26 @@ instance Serial Void where
   serialize = absurd
   deserialize = fail "I looked into the void."
 
+instance Serial ISet.IntSet where
+  serialize = serialize . ISet.toAscList
+  deserialize = ISet.fromDistinctAscList `liftM` deserialize
+
+instance Serial a => Serial (Seq.Seq a) where
+  serialize = serializeWith serialize
+  deserialize = deserializeWith deserialize
+
+instance Serial a => Serial (Set.Set a) where
+  serialize = serializeWith serialize
+  deserialize = deserializeWith deserialize
+
+instance Serial v => Serial (IMap.IntMap v) where
+  serialize = serializeWith serialize
+  deserialize = deserializeWith deserialize
+
+instance (Serial k, Serial v) => Serial (Map.Map k v) where
+  serialize = serializeWith serialize
+  deserialize = deserializeWith deserialize
+
 ------------------------------------------------------------------------------
 -- Generic Serialization
 ------------------------------------------------------------------------------
@@ -250,6 +276,24 @@ instance (Serial a, Serial b, Serial c) => Serial1 ((,,,) a b c) where
   serializeWith = serializeWith2 serialize
   deserializeWith = deserializeWith2 deserialize
 instance (Serial a, Serial b, Serial c, Serial d) => Serial1 ((,,,,) a b c d) where
+  serializeWith = serializeWith2 serialize
+  deserializeWith = deserializeWith2 deserialize
+
+instance Serial1 Seq.Seq where
+  serializeWith pv = serializeWith pv . F.toList
+  deserializeWith gv = Seq.fromList `liftM` deserializeWith gv
+
+instance Serial1 Set.Set where
+  serializeWith pv = serializeWith pv . Set.toAscList
+  deserializeWith gv = Set.fromDistinctAscList `liftM` deserializeWith gv
+
+instance Serial1 IMap.IntMap where
+  serializeWith pv = serializeWith (serializeWith2 serialize pv)
+                   . IMap.toAscList
+  deserializeWith gv = IMap.fromDistinctAscList
+               `liftM` deserializeWith (deserializeWith2 deserialize gv)
+
+instance Serial k => Serial1 (Map.Map k) where
   serializeWith = serializeWith2 serialize
   deserializeWith = deserializeWith2 deserialize
 
@@ -347,3 +391,8 @@ instance (Serial a, Serial b) => Serial2 ((,,,) a b) where
 instance (Serial a, Serial b, Serial c) => Serial2 ((,,,,) a b c) where
   serializeWith2 f g (a, b, c, d, e) = serialize a >> serialize b >> serialize c >> f d >> g e
   deserializeWith2 m n = liftM5 (,,,,) deserialize deserialize deserialize m n
+
+instance Serial2 Map.Map where
+  serializeWith2 pk pv = serializeWith (serializeWith2 pk pv) . Map.toAscList
+  deserializeWith2 gk gv = Map.fromDistinctAscList
+                   `liftM` deserializeWith (deserializeWith2 gk gv)
