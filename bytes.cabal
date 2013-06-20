@@ -1,10 +1,6 @@
 name:          bytes
 category:      Data, Serialization
-<<<<<<< HEAD
-version:       0.7.1
-=======
 version:       0.8
->>>>>>> 31c0881d04661da7e09304bc5a3f3cc68693dedb
 license:       BSD3
 cabal-version: >= 1.8
 license-file:  LICENSE
