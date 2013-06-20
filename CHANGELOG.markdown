@@ -1,3 +1,7 @@
+0.7.1
+-----
+* Trustworthiness
+
 0.4
 ---
 * Added a missing () instance
