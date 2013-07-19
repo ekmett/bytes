@@ -1,3 +1,7 @@
+0.8.1
+-----
+* Added proper support for `binary` 0.7.
+
 0.8
 -----
 * Trustworthiness

@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE Trustworthy #-}
+{-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
 --------------------------------------------------------------------
 -- |
 -- Copyright :  (c) Edward Kmett 2013
@@ -51,13 +52,6 @@ class (Integral (Unchecked m), Monad m, Applicative m) => MonadGet m where
   skip = lift . skip
 #endif
 
-  -- | Skip ahead @n@ bytes. No error if there isn't enough bytes.
-  uncheckedSkip :: Unchecked m -> m ()
-#ifndef HLINT
-  default uncheckedSkip :: (MonadTrans t, MonadGet n, m ~ t n) => Unchecked n -> m ()
-  uncheckedSkip = lift . uncheckedSkip
-#endif
-
   -- | If at least @n@ bytes are available return at least that much of the current input.
   -- Otherwise fail.
   ensure :: Int -> m Strict.ByteString
@@ -69,13 +63,6 @@ class (Integral (Unchecked m), Monad m, Applicative m) => MonadGet m where
   -- | Run @ga@, but return without consuming its input.
   -- Fails if @ga@ fails.
   lookAhead :: m a -> m a
-
-  -- | Get the next up to @n@ bytes as a lazy ByteString, without consuming them.
-  uncheckedLookAhead :: Unchecked m -> m (Bytes m)
-#ifndef HLINT
-  default uncheckedLookAhead :: (MonadTrans t, MonadGet n, m ~ t n) => Unchecked n -> m (Bytes n)
-  uncheckedLookAhead = lift . uncheckedLookAhead
-#endif
 
   -- | Pull @n@ bytes from the input, as a strict ByteString.
   getBytes :: Int -> m Strict.ByteString
@@ -202,18 +189,14 @@ instance MonadGet B.Get where
   type Bytes B.Get = Lazy.ByteString
   skip = B.skip
   {-# INLINE skip #-}
-  uncheckedSkip = B.uncheckedSkip
-  {-# INLINE uncheckedSkip #-}
   lookAhead = B.lookAhead
   {-# INLINE lookAhead #-}
-  uncheckedLookAhead = B.uncheckedLookAhead
-  {-# INLINE uncheckedLookAhead #-}
   ensure n = do
     bs <- lookAhead $ getByteString n
     unless (Strict.length bs >= n) $ fail "ensure: Required more bytes"
     return bs
   {-# INLINE ensure #-}
-  getBytes = B.getBytes
+  getBytes = B.getByteString
   {-# INLINE getBytes #-}
   remaining = B.remaining
   {-# INLINE remaining #-}
@@ -251,12 +234,8 @@ instance MonadGet S.Get where
   type Bytes S.Get = Strict.ByteString
   skip = S.skip
   {-# INLINE skip #-}
-  uncheckedSkip = S.uncheckedSkip
-  {-# INLINE uncheckedSkip #-}
   lookAhead = S.lookAhead
   {-# INLINE lookAhead #-}
-  uncheckedLookAhead = S.uncheckedLookAhead
-  {-# INLINE uncheckedLookAhead #-}
   getBytes = S.getBytes
   {-# INLINE getBytes #-}
   ensure = S.ensure
