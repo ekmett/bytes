@@ -64,6 +64,14 @@ class (Integral (Unchecked m), Monad m, Applicative m) => MonadGet m where
   -- Fails if @ga@ fails.
   lookAhead :: m a -> m a
 
+  -- | Like 'lookAhead', but consume the input if @gma@ returns 'Just _'.
+  -- Fails if @gma@ fails.
+  lookAheadM :: m (Maybe a) -> m (Maybe a)
+
+  -- | Like 'lookAhead', but consume the input if @gea@ returns 'Right _'.
+  -- Fails if @gea@ fails.
+  lookAheadE :: m (Either a b) -> m (Either a b)
+
   -- | Pull @n@ bytes from the input, as a strict ByteString.
   getBytes :: Int -> m Strict.ByteString
 #ifndef HLINT
@@ -191,6 +199,10 @@ instance MonadGet B.Get where
   {-# INLINE skip #-}
   lookAhead = B.lookAhead
   {-# INLINE lookAhead #-}
+  lookAheadM = B.lookAheadM
+  {-# INLINE lookAheadM #-}
+  lookAheadE = B.lookAheadE
+  {-# INLINE lookAheadE #-}
   ensure n = do
     bs <- lookAhead $ getByteString n
     unless (Strict.length bs >= n) $ fail "ensure: Required more bytes"
@@ -236,6 +248,10 @@ instance MonadGet S.Get where
   {-# INLINE skip #-}
   lookAhead = S.lookAhead
   {-# INLINE lookAhead #-}
+  lookAheadM = S.lookAheadM
+  {-# INLINE lookAheadM #-}
+  lookAheadE = S.lookAheadE
+  {-# INLINE lookAheadE #-}
   getBytes = S.getBytes
   {-# INLINE getBytes #-}
   ensure = S.ensure
@@ -276,39 +292,115 @@ instance MonadGet m => MonadGet (Lazy.StateT s m) where
   type Bytes (Lazy.StateT s m) = Bytes m
   lookAhead (Lazy.StateT m) = Lazy.StateT (lookAhead . m)
   {-# INLINE lookAhead #-}
+  lookAheadM (Lazy.StateT m) = Lazy.StateT (liftM factor . lookAheadE . liftM distribute . m)
+    where
+    distribute (Nothing, s') = Left (Nothing, s')
+    distribute (Just a, s') = Right (Just a, s')
+    factor = either id id
+  {-# INLINE lookAheadM #-}
+  lookAheadE (Lazy.StateT m) = Lazy.StateT (liftM factor . lookAheadE . liftM distribute . m)
+    where
+    distribute (Left a, s') = Left (Left a, s')
+    distribute (Right b, s') = Right (Right b, s')
+    factor = either id id
+  {-# INLINE lookAheadE #-}
 
 instance MonadGet m => MonadGet (Strict.StateT s m) where
   type Unchecked (Strict.StateT s m) = Unchecked m
   type Bytes (Strict.StateT s m) = Bytes m
   lookAhead (Strict.StateT m) = Strict.StateT (lookAhead . m)
   {-# INLINE lookAhead #-}
+  lookAheadM (Strict.StateT m) = Strict.StateT (liftM factor . lookAheadE . liftM distribute . m)
+    where
+    distribute (Nothing, s') = Left (Nothing, s')
+    distribute (Just a, s') = Right (Just a, s')
+    factor = either id id
+  {-# INLINE lookAheadM #-}
+  lookAheadE (Strict.StateT m) = Strict.StateT (liftM factor . lookAheadE . liftM distribute . m)
+    where
+    distribute (Left a, s') = Left (Left a, s')
+    distribute (Right b, s') = Right (Right b, s')
+    factor = either id id
+  {-# INLINE lookAheadE #-}
 
 instance MonadGet m => MonadGet (ReaderT e m) where
   type Unchecked (ReaderT e m) = Unchecked m
   type Bytes (ReaderT e m) = Bytes m
   lookAhead (ReaderT m) = ReaderT (lookAhead . m)
   {-# INLINE lookAhead #-}
+  lookAheadM (ReaderT m) = ReaderT (lookAheadM . m)
+  {-# INLINE lookAheadM #-}
+  lookAheadE (ReaderT m) = ReaderT (lookAheadE . m)
+  {-# INLINE lookAheadE #-}
 
 instance (MonadGet m, Monoid w) => MonadGet (Lazy.WriterT w m) where
   type Unchecked (Lazy.WriterT w m) = Unchecked m
   type Bytes (Lazy.WriterT w m) = Bytes m
   lookAhead (Lazy.WriterT m) = Lazy.WriterT (lookAhead m)
   {-# INLINE lookAhead #-}
+  lookAheadM (Lazy.WriterT m) = Lazy.WriterT (liftM factor $ lookAheadE $ liftM distribute m)
+    where
+    distribute (Nothing, s') = Left (Nothing, s')
+    distribute (Just a, s') = Right (Just a, s')
+    factor = either id id
+  {-# INLINE lookAheadM #-}
+  lookAheadE (Lazy.WriterT m) = Lazy.WriterT (liftM factor $ lookAheadE $ liftM distribute m)
+    where
+    distribute (Left a, s') = Left (Left a, s')
+    distribute (Right b, s') = Right (Right b, s')
+    factor = either id id
+  {-# INLINE lookAheadE #-}
 
 instance (MonadGet m, Monoid w) => MonadGet (Strict.WriterT w m) where
   type Unchecked (Strict.WriterT w m) = Unchecked m
   type Bytes (Strict.WriterT w m) = Bytes m
   lookAhead (Strict.WriterT m) = Strict.WriterT (lookAhead m)
   {-# INLINE lookAhead #-}
+  lookAheadM (Strict.WriterT m) = Strict.WriterT (liftM factor $ lookAheadE $ liftM distribute m)
+    where
+    distribute (Nothing, s') = Left (Nothing, s')
+    distribute (Just a, s') = Right (Just a, s')
+    factor = either id id
+  {-# INLINE lookAheadM #-}
+  lookAheadE (Strict.WriterT m) = Strict.WriterT (liftM factor $ lookAheadE $ liftM distribute m)
+    where
+    distribute (Left a, s') = Left (Left a, s')
+    distribute (Right b, s') = Right (Right b, s')
+    factor = either id id
+  {-# INLINE lookAheadE #-}
 
 instance (MonadGet m, Monoid w) => MonadGet (Strict.RWST r w s m) where
   type Unchecked (Strict.RWST r w s m) = Unchecked m
   type Bytes (Strict.RWST r w s m) = Bytes m
   lookAhead (Strict.RWST m) = Strict.RWST $ \r s -> lookAhead (m r s)
   {-# INLINE lookAhead #-}
+  lookAheadM (Strict.RWST m) = Strict.RWST (\r s -> liftM factor $ lookAheadE $ liftM distribute $ m r s )
+    where
+    distribute (Nothing, s',w') = Left (Nothing, s', w')
+    distribute (Just a, s',w') = Right (Just a, s', w')
+    factor = either id id
+  {-# INLINE lookAheadM #-}
+  lookAheadE (Strict.RWST m) = Strict.RWST (\r s -> liftM factor $ lookAheadE $ liftM distribute $ m r s)
+    where
+    distribute (Left a, s', w') = Left (Left a, s', w')
+    distribute (Right b, s', w') = Right (Right b, s', w')
+    factor = either id id
+  {-# INLINE lookAheadE #-}
 
 instance (MonadGet m, Monoid w) => MonadGet (Lazy.RWST r w s m) where
   type Unchecked (Lazy.RWST r w s m) = Unchecked m
   type Bytes (Lazy.RWST r w s m) = Bytes m
   lookAhead (Lazy.RWST m) = Lazy.RWST $ \r s -> lookAhead (m r s)
   {-# INLINE lookAhead #-}
+  lookAheadM (Lazy.RWST m) = Lazy.RWST (\r s -> liftM factor $ lookAheadE $ liftM distribute $ m r s )
+    where
+    distribute (Nothing, s',w') = Left (Nothing, s', w')
+    distribute (Just a, s',w') = Right (Just a, s', w')
+    factor = either id id
+  {-# INLINE lookAheadM #-}
+  lookAheadE (Lazy.RWST m) = Lazy.RWST (\r s -> liftM factor $ lookAheadE $ liftM distribute $ m r s)
+    where
+    distribute (Left a, s', w') = Left (Left a, s', w')
+    distribute (Right b, s', w') = Right (Right b, s', w')
+    factor = either id id
+  {-# INLINE lookAheadE #-}
