@@ -1,6 +1,8 @@
-0.8.1
+0.9
 -----
 * Added proper support for `binary` 0.7.
+* Restored `lookAheadM` and `lookAheadE`, thanks to the return of `lookAheadE` in `binary` 0.7.
+* Renamed `Unchecked` to `Remaining`, and removed the `uncheckedLookAhead` function, as it is no longer supported downstream.
 
 0.8
 -----
