@@ -38,9 +38,9 @@ import Data.Int
 import qualified Data.Serialize.Get as S
 import Data.Word
 
-class (Integral (Unchecked m), Monad m, Applicative m) => MonadGet m where
+class (Integral (Remaining m), Monad m, Applicative m) => MonadGet m where
   -- | An 'Integral' number type used for unchecked skips and counting.
-  type Unchecked m :: *
+  type Remaining m :: *
 
   -- | The underlying ByteString type used by this instance
   type Bytes m :: *
@@ -82,9 +82,9 @@ class (Integral (Unchecked m), Monad m, Applicative m) => MonadGet m where
   -- | Get the number of remaining unparsed bytes.
   -- Useful for checking whether all input has been consumed.
   -- Note that this forces the rest of the input.
-  remaining :: m (Unchecked m)
+  remaining :: m (Remaining m)
 #ifndef HLINT
-  default remaining :: (MonadTrans t, MonadGet n, m ~ t n) => m (Unchecked n)
+  default remaining :: (MonadTrans t, MonadGet n, m ~ t n) => m (Remaining n)
   remaining = lift remaining
 #endif
 
@@ -193,7 +193,7 @@ class (Integral (Unchecked m), Monad m, Applicative m) => MonadGet m where
 #endif
 
 instance MonadGet B.Get where
-  type Unchecked B.Get = Int64
+  type Remaining B.Get = Int64
   type Bytes B.Get = Lazy.ByteString
   skip = B.skip
   {-# INLINE skip #-}
@@ -242,7 +242,7 @@ instance MonadGet B.Get where
   {-# INLINE getWordhost #-}
 
 instance MonadGet S.Get where
-  type Unchecked S.Get = Int
+  type Remaining S.Get = Int
   type Bytes S.Get = Strict.ByteString
   skip = S.skip
   {-# INLINE skip #-}
@@ -288,7 +288,7 @@ instance MonadGet S.Get where
   {-# INLINE getWordhost #-}
 
 instance MonadGet m => MonadGet (Lazy.StateT s m) where
-  type Unchecked (Lazy.StateT s m) = Unchecked m
+  type Remaining (Lazy.StateT s m) = Remaining m
   type Bytes (Lazy.StateT s m) = Bytes m
   lookAhead (Lazy.StateT m) = Lazy.StateT (lookAhead . m)
   {-# INLINE lookAhead #-}
@@ -306,7 +306,7 @@ instance MonadGet m => MonadGet (Lazy.StateT s m) where
   {-# INLINE lookAheadE #-}
 
 instance MonadGet m => MonadGet (Strict.StateT s m) where
-  type Unchecked (Strict.StateT s m) = Unchecked m
+  type Remaining (Strict.StateT s m) = Remaining m
   type Bytes (Strict.StateT s m) = Bytes m
   lookAhead (Strict.StateT m) = Strict.StateT (lookAhead . m)
   {-# INLINE lookAhead #-}
@@ -324,7 +324,7 @@ instance MonadGet m => MonadGet (Strict.StateT s m) where
   {-# INLINE lookAheadE #-}
 
 instance MonadGet m => MonadGet (ReaderT e m) where
-  type Unchecked (ReaderT e m) = Unchecked m
+  type Remaining (ReaderT e m) = Remaining m
   type Bytes (ReaderT e m) = Bytes m
   lookAhead (ReaderT m) = ReaderT (lookAhead . m)
   {-# INLINE lookAhead #-}
@@ -334,7 +334,7 @@ instance MonadGet m => MonadGet (ReaderT e m) where
   {-# INLINE lookAheadE #-}
 
 instance (MonadGet m, Monoid w) => MonadGet (Lazy.WriterT w m) where
-  type Unchecked (Lazy.WriterT w m) = Unchecked m
+  type Remaining (Lazy.WriterT w m) = Remaining m
   type Bytes (Lazy.WriterT w m) = Bytes m
   lookAhead (Lazy.WriterT m) = Lazy.WriterT (lookAhead m)
   {-# INLINE lookAhead #-}
@@ -352,7 +352,7 @@ instance (MonadGet m, Monoid w) => MonadGet (Lazy.WriterT w m) where
   {-# INLINE lookAheadE #-}
 
 instance (MonadGet m, Monoid w) => MonadGet (Strict.WriterT w m) where
-  type Unchecked (Strict.WriterT w m) = Unchecked m
+  type Remaining (Strict.WriterT w m) = Remaining m
   type Bytes (Strict.WriterT w m) = Bytes m
   lookAhead (Strict.WriterT m) = Strict.WriterT (lookAhead m)
   {-# INLINE lookAhead #-}
@@ -370,7 +370,7 @@ instance (MonadGet m, Monoid w) => MonadGet (Strict.WriterT w m) where
   {-# INLINE lookAheadE #-}
 
 instance (MonadGet m, Monoid w) => MonadGet (Strict.RWST r w s m) where
-  type Unchecked (Strict.RWST r w s m) = Unchecked m
+  type Remaining (Strict.RWST r w s m) = Remaining m
   type Bytes (Strict.RWST r w s m) = Bytes m
   lookAhead (Strict.RWST m) = Strict.RWST $ \r s -> lookAhead (m r s)
   {-# INLINE lookAhead #-}
@@ -388,7 +388,7 @@ instance (MonadGet m, Monoid w) => MonadGet (Strict.RWST r w s m) where
   {-# INLINE lookAheadE #-}
 
 instance (MonadGet m, Monoid w) => MonadGet (Lazy.RWST r w s m) where
-  type Unchecked (Lazy.RWST r w s m) = Unchecked m
+  type Remaining (Lazy.RWST r w s m) = Remaining m
   type Bytes (Lazy.RWST r w s m) = Bytes m
   lookAhead (Lazy.RWST m) = Lazy.RWST $ \r s -> lookAhead (m r s)
   {-# INLINE lookAhead #-}
