@@ -1,3 +1,7 @@
+0.10
+----
+* Changed all of the byte orders to big-endian by default *except* for `Word` and `Int`, which are variable sized.
+
 0.9
 -----
 * Added proper support for `binary` 0.7.

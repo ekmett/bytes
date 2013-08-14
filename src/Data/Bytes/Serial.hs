@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -117,13 +118,18 @@ restore = do
   unless (n >= required) $ fail "restore: Required more bytes"
   return $ unsafePerformIO $ withForeignPtr fp $ \p -> peekByteOff p o
 
+foreign import ccall floatToWord32 :: Float -> Word32
+foreign import ccall word32ToFloat :: Word32 -> Float
+foreign import ccall doubleToWord64 :: Double -> Word64
+foreign import ccall word64ToDouble :: Word64 -> Double
+
 instance Serial Double where
-  serialize = store
-  deserialize = restore
+  serialize = serialize . doubleToWord64
+  deserialize = liftM word64ToDouble restore
 
 instance Serial Float where
-  serialize = store
-  deserialize = restore
+  serialize = serialize . floatToWord32
+  deserialize = liftM word32ToFloat restore
 
 instance Serial Char where
   serialize = putWord32be . fromIntegral . fromEnum

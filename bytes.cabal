@@ -1,6 +1,6 @@
 name:          bytes
 category:      Data, Serialization
-version:       0.9
+version:       0.10
 license:       BSD3
 cabal-version: >= 1.8
 license-file:  LICENSE
@@ -62,6 +62,7 @@ library
     ghc-options: -Werror
 
   ghc-options: -Wall -fwarn-tabs -O2
+  c-sources: cbits/i2d.c
   hs-source-dirs: src
 
 test-suite doctests
