@@ -76,15 +76,15 @@ class Serial a where
 #endif
 
 instance Serial Strict.ByteString where
-  serialize bs = putWord32host (fromIntegral (Strict.length bs)) >> putByteString bs
+  serialize bs = putWord32be (fromIntegral (Strict.length bs)) >> putByteString bs
   deserialize = do
-    n <- getWord32host
+    n <- getWord32be
     getByteString (fromIntegral n)
 
 instance Serial Lazy.ByteString where
-  serialize bs = putWord64host (fromIntegral (Lazy.length bs)) >> putLazyByteString bs
+  serialize bs = putWord64be (fromIntegral (Lazy.length bs)) >> putLazyByteString bs
   deserialize = do
-    n <- getWord64host
+    n <- getWord64be
     getLazyByteString (fromIntegral n)
 
 instance Serial SText.Text where
@@ -126,24 +126,24 @@ instance Serial Float where
   deserialize = restore
 
 instance Serial Char where
-  serialize = putWord32host . fromIntegral . fromEnum
-  deserialize = liftM (toEnum . fromIntegral) getWord32host
+  serialize = putWord32be . fromIntegral . fromEnum
+  deserialize = liftM (toEnum . fromIntegral) getWord32be
 
 instance Serial Word where
   serialize = putWordhost
   deserialize = getWordhost
 
 instance Serial Word64 where
-  serialize = putWord64host
-  deserialize = getWord64host
+  serialize = putWord64be
+  deserialize = getWord64be
 
 instance Serial Word32 where
-  serialize = putWord32host
-  deserialize = getWord32host
+  serialize = putWord32be
+  deserialize = getWord32be
 
 instance Serial Word16 where
-  serialize = putWord16host
-  deserialize = getWord16host
+  serialize = putWord16be
+  deserialize = getWord16be
 
 instance Serial Word8 where
   serialize = putWord8
@@ -154,16 +154,16 @@ instance Serial Int where
   deserialize = liftM fromIntegral getWordhost
 
 instance Serial Int64 where
-  serialize = putWord64host . fromIntegral
-  deserialize = liftM fromIntegral getWord64host
+  serialize = putWord64be . fromIntegral
+  deserialize = liftM fromIntegral getWord64be
 
 instance Serial Int32 where
-  serialize = putWord32host . fromIntegral
-  deserialize = liftM fromIntegral getWord32host
+  serialize = putWord32be . fromIntegral
+  deserialize = liftM fromIntegral getWord32be
 
 instance Serial Int16 where
-  serialize = putWord16host . fromIntegral
-  deserialize = liftM fromIntegral getWord16host
+  serialize = putWord16be . fromIntegral
+  deserialize = liftM fromIntegral getWord16be
 
 instance Serial Int8 where
   serialize = putWord8 . fromIntegral
