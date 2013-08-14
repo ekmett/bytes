@@ -26,7 +26,7 @@ unsigned long long floatToWord32(float input) {
   return u.l;
 }
 
-float word32ToDouble(unsigned long long input) {
+float word32ToFloat(unsigned long long input) {
   union {
     float f;
     unsigned long long l;

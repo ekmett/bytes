@@ -1,3 +1,7 @@
+0.10.1
+------
+* Fixed typo in `cbits/i2d.c` that was causing a linking error.
+
 0.10
 ----
 * Changed all of the byte orders to big-endian by default *except* for `Word` and `Int`, which are variable sized.
