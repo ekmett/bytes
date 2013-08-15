@@ -57,6 +57,8 @@ library
     Data.Bytes.Get
     Data.Bytes.Serial
     Data.Bytes.Put
+    Data.Bytes.Unsigned
+    Data.Bytes.VarInt
 
   if flag(lib-Werror)
     ghc-options: -Werror
