@@ -21,6 +21,8 @@
 --------------------------------------------------------------------
 module Data.Bytes.Get
   ( MonadGet(..)
+  , runGetL
+  , runGetS
   ) where
 
 import Control.Applicative
@@ -404,3 +406,11 @@ instance (MonadGet m, Monoid w) => MonadGet (Lazy.RWST r w s m) where
     distribute (Right b, s', w') = Right (Right b, s', w')
     factor = either id id
   {-# INLINE lookAheadE #-}
+
+-- | Get something from a lazy 'Lazy.ByteString' using 'B.runGet'.
+runGetL :: B.Get a -> Lazy.ByteString -> a
+runGetL = B.runGet
+
+-- | Get something from a strict 'Strict.ByteString' using 'S.runGet'.
+runGetS :: S.Get a -> Strict.ByteString -> Either String a
+runGetS = S.runGet
