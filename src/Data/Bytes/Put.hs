@@ -23,6 +23,8 @@
 --------------------------------------------------------------------
 module Data.Bytes.Put
   ( MonadPut(..)
+  , runPutL
+  , runPutS
   ) where
 
 import Control.Applicative
@@ -238,3 +240,11 @@ instance (MonadPut m, Monoid w) => MonadPut (Lazy.WriterT w m)
 instance (MonadPut m, Monoid w) => MonadPut (Strict.WriterT w m)
 instance (MonadPut m, Monoid w) => MonadPut (Lazy.RWST r w s m)
 instance (MonadPut m, Monoid w) => MonadPut (Strict.RWST r w s m)
+
+-- | Put a value into a lazy 'Lazy.ByteString' using 'B.runPut'.
+runPutL :: B.Put -> Lazy.ByteString
+runPutL = B.runPut
+
+-- | Put a value into a strict 'Strict.ByteString' using 'S.runPut'.
+runPutS :: S.Put -> Strict.ByteString
+runPutS = S.runPut
