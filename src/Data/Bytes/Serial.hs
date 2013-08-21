@@ -125,11 +125,11 @@ foreign import ccall word64ToDouble :: Word64 -> Double
 
 instance Serial Double where
   serialize = serialize . doubleToWord64
-  deserialize = liftM word64ToDouble restore
+  deserialize = liftM word64ToDouble deserialize
 
 instance Serial Float where
   serialize = serialize . floatToWord32
-  deserialize = liftM word32ToFloat restore
+  deserialize = liftM word32ToFloat deserialize
 
 instance Serial Char where
   serialize = putWord32be . fromIntegral . fromEnum
