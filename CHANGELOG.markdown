@@ -1,3 +1,7 @@
+0.10.2
+------
+* Switched to <stdint.h> to get more portable size correctness.
+
 0.10.1
 ------
 * Fixed typo in `cbits/i2d.c` that was causing a linking error.

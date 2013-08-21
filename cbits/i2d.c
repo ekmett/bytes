@@ -1,35 +1,36 @@
+#include <stdint.h>
 
-unsigned long long doubleToWord64(double input) {
+uint64_t doubleToWord64(double input) {
   union {
     double d;
-    unsigned long long l;
+    uint64_t l;
   } u;
   u.d = input;
   return u.l;
 }
 
-double word64ToDouble(unsigned long long input) {
+double word64ToDouble(uint64_t input) {
   union {
     double d;
-    unsigned long long l;
+    uint64_t l;
   } u;
   u.l = input;
   return u.d;
 }
 
-unsigned long long floatToWord32(float input) {
+uint32_t floatToWord32(float input) {
   union {
     float f;
-    unsigned long long l;
+    uint32_t l;
   } u;
   u.f = input;
   return u.l;
 }
 
-float word32ToFloat(unsigned long long input) {
+float word32ToFloat(uint32_t input) {
   union {
     float f;
-    unsigned long long l;
+    uint32_t l;
   } u;
   u.l = input;
   return u.f;
