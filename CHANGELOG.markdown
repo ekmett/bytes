@@ -1,3 +1,7 @@
+0.11
+----
+* Added `Data.Bytes.VarInt` and `Data.Bytes.Signed`.
+
 0.10.2
 ------
 * Switched to <stdint.h> to get more portable size correctness.

@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 --------------------------------------------------------------------
@@ -26,7 +27,7 @@ import Data.Bits
 import Data.Bytes.Get
 import Data.Bytes.Put
 import Data.Bytes.Serial
-import Data.Bytes.Unsigned
+import Data.Bytes.Signed
 import Data.Word
 
 -- | Integer/Word types serialized to base-128 variable-width ints.
@@ -35,28 +36,31 @@ import Data.Word
 -- "a\NUL\NUL\NUL\NUL\NUL\NUL\NUL"
 -- >>> runPutL $ serialize (97 :: VarInt Word64)
 -- "a"
-newtype VarInt n = VarInt {
-      unVarInt :: n
-    } deriving (Eq, Ord, Show, Enum, Num, Integral, Bounded, Real, Bits)
+newtype VarInt n = VarInt { unVarInt :: n }
+  deriving (Eq, Ord, Show, Enum, Num, Integral, Bounded, Real, Bits)
 
-instance Unsigned n => Unsigned (VarInt n) where
-    type Signless (VarInt n) = VarInt (Signless n)
-    unsign (VarInt n) = VarInt (unsign n)
+type instance Unsigned (VarInt n) = VarInt (Unsigned n)
+type instance Signed (VarInt n) = VarInt (Signed n)
 
-instance (Unsigned n, Bits n) => Serial (VarInt n) where
-    serialize (VarInt n) = putVarInt $ unsign n
-    {-# INLINE serialize #-}
-    deserialize = getWord8 >>= getVarInt
-    {-# INLINE deserialize #-}
+instance (Bits n, Integral n, Bits (Unsigned n), Integral (Unsigned n)) => Serial (VarInt n) where
+  serialize (VarInt n) = putVarInt $ unsigned n
+  {-# INLINE serialize #-}
 
-putVarInt :: (Integral a, Bits a, MonadPut m) => a -> m ()
-putVarInt n | n < 0x80  = putWord8 $ fromIntegral n
-            | otherwise = do putWord8 $  fromIntegral n `setBit` 7
-                             putVarInt $ n `shiftR` 7
+  deserialize = getWord8 >>= getVarInt
+  {-# INLINE deserialize #-}
+
+putVarInt :: (MonadPut m, Integral a, Bits a) => a -> m ()
+putVarInt n
+  | n < 0x80 = putWord8 $ fromIntegral n
+  | otherwise = do
+    putWord8 $ setBit (fromIntegral n) 7
+    putVarInt $ shiftR n 7
 {-# INLINE putVarInt #-}
-getVarInt :: (MonadGet m, Bits b, Unsigned b) => Word8 -> m (VarInt b)
-getVarInt n | n `testBit` 7 = do VarInt m <- deserialize
-                                 return $ (m `shiftL` 7)
-                                          .|. (fromIntegral n `clearBit` 7)
-            | otherwise     = return . fromIntegral $ n
+
+getVarInt :: (MonadGet m, Num b, Bits b) => Word8 -> m b
+getVarInt n
+  | testBit n 7 = do
+    VarInt m <- getWord8 >>= getVarInt
+    return $ shiftL m 7 .|. clearBit (fromIntegral n) 7
+  | otherwise = return $ fromIntegral n
 {-# INLINE getVarInt #-}
