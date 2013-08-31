@@ -1,3 +1,7 @@
+0.11.1
+------
+* Liberalized containers dependency to allow `containers` versions all the way back to 0.3 for stackage purposes
+
 0.11
 ----
 * Added `Data.Bytes.VarInt` and `Data.Bytes.Signed`.
