@@ -1,3 +1,7 @@
+0.11.2
+------
+* Constraint `binary` version for issue #5.
+
 0.11.1
 ------
 * Liberalized containers dependency to allow `containers` versions all the way back to 0.3 for stackage purposes
