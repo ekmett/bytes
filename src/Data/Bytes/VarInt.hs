@@ -30,10 +30,14 @@ import Data.Bytes.Serial
 import Data.Bytes.Signed
 import Data.Word
 
+-- $setup
+-- >>> import Data.Word
+-- >>> import Data.Bytes.Serial
+
 -- | Integer/Word types serialized to base-128 variable-width ints.
 --
 -- >>> runPutL $ serialize (97 :: Word64)
--- "a\NUL\NUL\NUL\NUL\NUL\NUL\NUL"
+-- "\NUL\NUL\NUL\NUL\NUL\NUL\NULa"
 -- >>> runPutL $ serialize (97 :: VarInt Word64)
 -- "a"
 newtype VarInt n = VarInt { unVarInt :: n }
