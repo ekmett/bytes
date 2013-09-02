@@ -1,3 +1,7 @@
+0.11.3
+------
+* Fixed the doctests from 0.11.2
+
 0.11.2
 ------
 * Constraint `binary` version for issue #5.
