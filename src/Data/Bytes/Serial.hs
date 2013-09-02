@@ -132,24 +132,24 @@ instance Serial Float where
   deserialize = liftM word32ToFloat deserialize
 
 instance Serial Char where
-  serialize = putWord32be . fromIntegral . fromEnum
-  deserialize = liftM (toEnum . fromIntegral) getWord32be
+  serialize = putWord32host . fromIntegral . fromEnum
+  deserialize = liftM (toEnum . fromIntegral) getWord32host
 
 instance Serial Word where
   serialize = putWordhost
   deserialize = getWordhost
 
 instance Serial Word64 where
-  serialize = putWord64be
-  deserialize = getWord64be
+  serialize = putWord64host
+  deserialize = getWord64host
 
 instance Serial Word32 where
-  serialize = putWord32be
-  deserialize = getWord32be
+  serialize = putWord32host
+  deserialize = getWord32host
 
 instance Serial Word16 where
-  serialize = putWord16be
-  deserialize = getWord16be
+  serialize = putWord16host
+  deserialize = getWord16host
 
 instance Serial Word8 where
   serialize = putWord8
@@ -160,16 +160,16 @@ instance Serial Int where
   deserialize = liftM fromIntegral getWordhost
 
 instance Serial Int64 where
-  serialize = putWord64be . fromIntegral
-  deserialize = liftM fromIntegral getWord64be
+  serialize = putWord64host . fromIntegral
+  deserialize = liftM fromIntegral getWord64host
 
 instance Serial Int32 where
-  serialize = putWord32be . fromIntegral
-  deserialize = liftM fromIntegral getWord32be
+  serialize = putWord32host . fromIntegral
+  deserialize = liftM fromIntegral getWord32host
 
 instance Serial Int16 where
-  serialize = putWord16be . fromIntegral
-  deserialize = liftM fromIntegral getWord16be
+  serialize = putWord16host . fromIntegral
+  deserialize = liftM fromIntegral getWord16host
 
 instance Serial Int8 where
   serialize = putWord8 . fromIntegral
