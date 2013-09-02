@@ -59,7 +59,8 @@ main = withUnicode $ getSources >>= \sources -> doctest $
   : "-optPdist/build/autogen/cabal_macros.h"
   : "-hide-all-packages"
   : "-Iincludes"
-  : map ("-package="++) deps ++ sources
+  : "dist/build/cbits/i2d.o"
+  : map ("-package="++) (filter (not . ("bytes-" `isPrefixOf`)) deps) ++ sources
 
 getSources :: IO [FilePath]
 getSources = filter (isSuffixOf ".hs") <$> go "src"
