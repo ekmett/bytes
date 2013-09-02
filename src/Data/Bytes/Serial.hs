@@ -27,6 +27,8 @@
 --------------------------------------------------------------------
 module Data.Bytes.Serial
   ( Serial(..)
+  , serializeBE, deserializeBE
+  , serializeLE, deserializeLE
   , GSerial(..)
   , Serial1(..), serialize1, deserialize1
   , GSerial1(..)
@@ -34,6 +36,7 @@ module Data.Bytes.Serial
   , store, restore
   ) where
 
+import Control.Applicative ((<$>))
 import Control.Monad
 import qualified Data.Foldable as F
 import Data.Bytes.Get
@@ -41,6 +44,8 @@ import Data.Bytes.Put
 import Data.ByteString.Internal
 import Data.ByteString.Lazy as Lazy
 import Data.ByteString as Strict
+import Data.Endian
+import Data.Endian.Unsafe
 import Data.Int
 import qualified Data.IntMap as IMap
 import qualified Data.IntSet as ISet
@@ -198,6 +203,30 @@ instance Serial v => Serial (IMap.IntMap v) where
 instance (Serial k, Serial v) => Serial (Map.Map k v) where
   serialize = serializeWith serialize
   deserialize = deserializeWith deserialize
+
+------------------------------------------------------------------------------
+-- Endianness-Dependent Serialization
+------------------------------------------------------------------------------
+
+instance (EndianSensitive a, Serial a) => Serial (BigEndian a) where
+  serialize = serialize . unsafeUnwrapBigEndian
+  deserialize = unsafeAssertBigEndian <$> deserialize
+
+instance (EndianSensitive a, Serial a) => Serial (LittleEndian a) where
+  serialize = serialize . unsafeUnwrapLittleEndian
+  deserialize = unsafeAssertLittleEndian <$> deserialize
+
+serializeBE :: (Serial a, EndianSensitive a, MonadPut m) => a -> m ()
+serializeBE = serialize . toBigEndian
+
+deserializeBE :: (Serial a, EndianSensitive a, MonadGet m) => m a
+deserializeBE = fromBigEndian <$> deserialize
+
+serializeLE :: (Serial a, EndianSensitive a, MonadPut m) => a -> m ()
+serializeLE = serialize . toBigEndian
+
+deserializeLE :: (Serial a, EndianSensitive a, MonadGet m) => m a
+deserializeLE = fromBigEndian <$> deserialize
 
 ------------------------------------------------------------------------------
 -- Generic Serialization
