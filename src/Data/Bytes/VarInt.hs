@@ -36,9 +36,11 @@ import Data.Word
 
 -- | Integer/Word types serialized to base-128 variable-width ints.
 --
--- >>> runPutL $ serialize (97 :: Word64)
+-- >>> import Data.Monoid (mconcat)
+-- >>> import Data.ByteString.Lazy (toChunks)
+-- >>> mconcat $ toChunks $ runPutL $ serialize (97 :: Word64)
 -- "\NUL\NUL\NUL\NUL\NUL\NUL\NULa"
--- >>> runPutL $ serialize (97 :: VarInt Word64)
+-- >>> mconcat $ toChunks $ runPutL $ serialize (97 :: VarInt Word64)
 -- "a"
 newtype VarInt n = VarInt { unVarInt :: n }
   deriving (Eq, Ord, Show, Enum, Num, Integral, Bounded, Real, Bits)
