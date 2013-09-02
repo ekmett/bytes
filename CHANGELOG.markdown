@@ -1,3 +1,7 @@
+0.11.4
+------
+* Fixed issue #6 with regards to the test harness performance.
+
 0.11.3
 ------
 * Fixed the doctests from 0.11.2
