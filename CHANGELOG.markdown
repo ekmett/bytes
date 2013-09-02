@@ -1,3 +1,7 @@
+0.11.5
+------
+* Fixed issue #7, permitting the doctests to function against bytestring 0.9
+
 0.11.4
 ------
 * Fixed issue #6 with regards to the test harness performance.
