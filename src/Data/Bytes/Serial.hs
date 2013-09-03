@@ -18,12 +18,12 @@
 -- Stability :  experimental
 -- Portability: non-portable
 --
--- This module generalizes the @binary@ 'B.PutM' and @cereal@ 'S.PutM'
--- monads in an ad hoc fashion to permit code to be written that is
--- compatible across them.
---
--- Moreover, this class permits code to be written to be portable over
--- various monad transformers applied to these as base monads.
+-- This module contains four classes, each providing methods to
+-- serialize and deserialize types. 'Serial' is the main class, to
+-- be used if there is a single, canonical way to serialize a
+-- specific type. 'SerialBE' and 'SerialLE' in turn are used to
+-- respectively implement big endian and little endian
+-- serializations.
 --------------------------------------------------------------------
 module Data.Bytes.Serial
   ( SerialBE(..)
