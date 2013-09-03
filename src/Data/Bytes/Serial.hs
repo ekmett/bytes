@@ -30,6 +30,8 @@ module Data.Bytes.Serial
   , SerialHost(..)
   , Serial(..)
   , GSerial(..)
+  , GSerialBE(..)
+  , GSerialLE(..)
   , Serial1(..), serialize1, deserialize1
   , GSerial1(..)
   , Serial2(..), serialize2, deserialize2
@@ -75,7 +77,16 @@ representation
 -}
 class SerialBE a where
   serializeBE :: MonadPut m => a -> m ()
+#ifndef HLINT
+  default serializeBE :: (MonadPut m, GSerialBE (Rep a), Generic a) => a -> m ()
+  serializeBE = gserializeBE . from
+#endif
+
   deserializeBE :: MonadGet m => m a
+#ifndef HLINT
+  default deserializeBE :: (MonadGet m, GSerialBE (Rep a), Generic a) => m a
+  deserializeBE = liftM to gdeserializeBE
+#endif
 
 instance SerialBE Double where
   serializeBE = serializeBE . doubleToWord64
@@ -119,7 +130,16 @@ representation
 -}
 class SerialLE a where
   serializeLE :: MonadPut m => a -> m ()
+#ifndef HLINT
+  default serializeLE :: (MonadPut m, GSerialLE (Rep a), Generic a) => a -> m ()
+  serializeLE = gserializeLE . from
+#endif
+
   deserializeLE :: MonadGet m => m a
+#ifndef HLINT
+  default deserializeLE :: (MonadGet m, GSerialLE (Rep a), Generic a) => m a
+  deserializeLE = liftM to gdeserializeLE
+#endif
 
 instance SerialLE Double where
   serializeLE = serializeLE . doubleToWord64
@@ -237,7 +257,7 @@ class Serial a where
 
   deserialize :: MonadGet m => m a
 #ifndef HLINT
-  default deserialize :: (MonadGet m, Generic a, GSerial (Rep a)) => m a
+  default deserialize :: (MonadGet m, GSerial (Rep a), Generic a) => m a
   deserialize = liftM to gdeserialize
 #endif
 
@@ -399,6 +419,44 @@ instance GSerial f => GSerial (M1 i c f) where
 instance Serial a => GSerial (K1 i a) where
   gserialize (K1 x) = serialize x
   gdeserialize = liftM K1 deserialize
+
+
+-- | Used internally to provide generic big-endian serialization
+class GSerialBE f where
+  gserializeBE :: MonadPut m => f a -> m ()
+#ifndef HLINT
+  default gserializeBE :: (MonadPut m, GSerial f) => f a -> m ()
+  gserializeBE = gserialize
+#endif
+  gdeserializeBE :: MonadGet m => m (f a)
+#ifndef HLINT
+  default gdeserializeBE :: (MonadGet m, GSerial f) => m (f a)
+  gdeserializeBE = gdeserialize
+#endif
+
+-- only difference between GSerialBE and GSerial
+instance SerialBE a => GSerialBE (K1 i a) where
+  gserializeBE (K1 x) = serializeBE x
+  gdeserializeBE = liftM K1 deserializeBE
+
+
+-- | Used internally to provide generic little-endian serialization
+class GSerialLE f where
+  gserializeLE :: MonadPut m => f a -> m ()
+#ifndef HLINT
+  default gserializeLE :: (MonadPut m, GSerial f) => f a -> m ()
+  gserializeLE = gserialize
+#endif
+  gdeserializeLE :: MonadGet m => m (f a)
+#ifndef HLINT
+  default gdeserializeLE :: (MonadGet m, GSerial f) => m (f a)
+  gdeserializeLE = gdeserialize
+#endif
+
+-- only difference between GSerialLE and GSerial
+instance SerialLE a => GSerialLE (K1 i a) where
+  gserializeLE (K1 x) = serializeLE x
+  gdeserializeLE = liftM K1 deserializeLE
 
 ------------------------------------------------------------------------------
 -- Higher-Rank Serialization
