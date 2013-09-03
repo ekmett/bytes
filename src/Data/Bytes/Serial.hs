@@ -20,10 +20,9 @@
 --
 -- This module contains four classes, each providing methods to
 -- serialize and deserialize types. 'Serial' is the main class, to
--- be used if there is a single, canonical way to serialize a
--- specific type. 'SerialBE' and 'SerialLE' in turn are used to
--- respectively implement big endian and little endian
--- serializations.
+-- be used for the canonical way to serialize a specific
+-- type. 'SerialBE' and 'SerialLE' in turn are used to respectively
+-- implement big endian and little endian serializations.
 --------------------------------------------------------------------
 module Data.Bytes.Serial
   ( SerialBE(..)
