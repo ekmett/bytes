@@ -26,7 +26,10 @@
 -- various monad transformers applied to these as base monads.
 --------------------------------------------------------------------
 module Data.Bytes.Serial
-  ( Serial(..)
+  ( SerialBE(..)
+  , SerialLE(..)
+  , SerialHost(..)
+  , Serial(..)
   , GSerial(..)
   , Serial1(..), serialize1, deserialize1
   , GSerial1(..)
