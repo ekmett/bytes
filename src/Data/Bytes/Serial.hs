@@ -184,58 +184,27 @@ with the same endianness as that native to the current machine.
 class SerialHost a where
   serializeHost :: MonadPut m => a -> m ()
   deserializeHost :: MonadGet m => m a
-
-instance SerialHost Double where
-  serializeHost = serializeHost . doubleToWord64
-  deserializeHost = liftM word64ToDouble deserializeHost
-
-instance SerialHost Float where
-  serializeHost = serializeHost . floatToWord32
-  deserializeHost = liftM word32ToFloat deserializeHost
-
-instance SerialHost Char where
-  serializeHost = putWord32host . fromIntegral . fromEnum
-  deserializeHost = liftM (toEnum . fromIntegral) getWord32host
+#ifndef HLINT
+#ifdef WORDS_BIGENDIAN
+  default serializeHost :: (SerialBE a, MonadPut m) => a -> m ()
+  serializeHost = serializeBE
+  default deserializeHost :: (SerialBE a, MonadGet m) => m a
+  deserializeHost = deserializeBE
+#else
+  default serializeHost :: (SerialLE a, MonadPut m) => a -> m ()
+  serializeHost = serializeLE
+  default deserializeHost :: (SerialLE a, MonadGet m) => m a
+  deserializeHost = deserializeLE
+#endif
+#endif
 
 instance SerialHost Word where
   serializeHost = putWordhost
   deserializeHost = getWordhost
 
-instance SerialHost Word64 where
-  serializeHost = putWord64host
-  deserializeHost = getWord64host
-
-instance SerialHost Word32 where
-  serializeHost = putWord32host
-  deserializeHost = getWord32host
-
-instance SerialHost Word16 where
-  serializeHost = putWord16host
-  deserializeHost = getWord16host
-
-instance SerialHost Word8 where
-  serializeHost = putWord8
-  deserializeHost = getWord8
-
 instance SerialHost Int where
   serializeHost = putWordhost . fromIntegral
   deserializeHost = liftM fromIntegral getWordhost
-
-instance SerialHost Int64 where
-  serializeHost = putWord64host . fromIntegral
-  deserializeHost = liftM fromIntegral getWord64host
-
-instance SerialHost Int32 where
-  serializeHost = putWord32host . fromIntegral
-  deserializeHost = liftM fromIntegral getWord32host
-
-instance SerialHost Int16 where
-  serializeHost = putWord16host . fromIntegral
-  deserializeHost = liftM fromIntegral getWord16host
-
-instance SerialHost Int8 where
-  serializeHost = putWord8 . fromIntegral
-  deserializeHost = liftM fromIntegral getWord8
 
 ------------------------------------------------------------------------------
 -- Serialization
