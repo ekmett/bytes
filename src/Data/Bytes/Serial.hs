@@ -225,8 +225,9 @@ instance SerialHost Int8 where
 {-| Methods to serialize and deserialize type 'a' to a binary representation
 
 Instances provided here for fixed-with Integers and Words are big endian.
-Instances for ByteStrings store also the length of bytestring big endian.
-Instances for Word and Int are host endian as they are machine-specific types.
+Instances for strict and lazy bytestrings store also the length of bytestring
+big endian. Instances for Word and Int are host endian as they are
+machine-specific types.
 -}
 class Serial a where
   serialize :: MonadPut m => a -> m ()
