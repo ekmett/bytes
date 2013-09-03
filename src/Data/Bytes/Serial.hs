@@ -18,15 +18,17 @@
 -- Stability :  experimental
 -- Portability: non-portable
 --
--- This module generalizes the @binary@ 'B.PutM' and @cereal@ 'S.PutM'
--- monads in an ad hoc fashion to permit code to be written that is
--- compatible across them.
---
--- Moreover, this class permits code to be written to be portable over
--- various monad transformers applied to these as base monads.
+-- This module contains four classes, each providing methods to
+-- serialize and deserialize types. 'Serial' is the main class, to
+-- be used for the canonical way to serialize a specific
+-- type. 'SerialBE' and 'SerialLE' in turn are used to respectively
+-- implement big endian and little endian serializations.
 --------------------------------------------------------------------
 module Data.Bytes.Serial
-  ( Serial(..)
+  ( SerialBE(..)
+  , SerialLE(..)
+  , SerialHost(..)
+  , Serial(..)
   , GSerial(..)
   , Serial1(..), serialize1, deserialize1
   , GSerial1(..)
@@ -59,10 +61,173 @@ import Foreign.Storable
 import GHC.Generics
 import System.IO.Unsafe
 
+foreign import ccall floatToWord32 :: Float -> Word32
+foreign import ccall word32ToFloat :: Word32 -> Float
+foreign import ccall doubleToWord64 :: Double -> Word64
+foreign import ccall word64ToDouble :: Word64 -> Double
+
+------------------------------------------------------------------------------
+-- Endianness-Dependant Serialization
+------------------------------------------------------------------------------
+
+{-| Methods to serialize and deserialize type 'a' to a big endian binary
+representation
+-}
+class SerialBE a where
+  serializeBE :: MonadPut m => a -> m ()
+  deserializeBE :: MonadGet m => m a
+
+instance SerialBE Double where
+  serializeBE = serializeBE . doubleToWord64
+  deserializeBE = liftM word64ToDouble deserializeBE
+
+instance SerialBE Float where
+  serializeBE = serializeBE . floatToWord32
+  deserializeBE = liftM word32ToFloat deserializeBE
+
+instance SerialBE Char where
+  serializeBE = putWord32be . fromIntegral . fromEnum
+  deserializeBE = liftM (toEnum . fromIntegral) getWord32be
+
+instance SerialBE Word64 where
+  serializeBE = putWord64be
+  deserializeBE = getWord64be
+
+instance SerialBE Word32 where
+  serializeBE = putWord32be
+  deserializeBE = getWord32be
+
+instance SerialBE Word16 where
+  serializeBE = putWord16be
+  deserializeBE = getWord16be
+
+instance SerialBE Int64 where
+  serializeBE = putWord64be . fromIntegral
+  deserializeBE = liftM fromIntegral getWord64be
+
+instance SerialBE Int32 where
+  serializeBE = putWord32be . fromIntegral
+  deserializeBE = liftM fromIntegral getWord32be
+
+instance SerialBE Int16 where
+  serializeBE = putWord16be . fromIntegral
+  deserializeBE = liftM fromIntegral getWord16be
+
+
+{-| Methods to serialize and deserialize type 'a' to a little endian binary
+representation
+-}
+class SerialLE a where
+  serializeLE :: MonadPut m => a -> m ()
+  deserializeLE :: MonadGet m => m a
+
+instance SerialLE Double where
+  serializeLE = serializeLE . doubleToWord64
+  deserializeLE = liftM word64ToDouble deserializeLE
+
+instance SerialLE Float where
+  serializeLE = serializeLE . floatToWord32
+  deserializeLE = liftM word32ToFloat deserializeLE
+
+instance SerialLE Char where
+  serializeLE = putWord32le . fromIntegral . fromEnum
+  deserializeLE = liftM (toEnum . fromIntegral) getWord32le
+
+instance SerialLE Word64 where
+  serializeLE = putWord64le
+  deserializeLE = getWord64le
+
+instance SerialLE Word32 where
+  serializeLE = putWord32le
+  deserializeLE = getWord32le
+
+instance SerialLE Word16 where
+  serializeLE = putWord16le
+  deserializeLE = getWord16le
+
+instance SerialLE Int64 where
+  serializeLE = putWord64le . fromIntegral
+  deserializeLE = liftM fromIntegral getWord64le
+
+instance SerialLE Int32 where
+  serializeLE = putWord32le . fromIntegral
+  deserializeLE = liftM fromIntegral getWord32le
+
+instance SerialLE Int16 where
+  serializeLE = putWord16le . fromIntegral
+  deserializeLE = liftM fromIntegral getWord16le
+
+
+{-| Methods to serialize and deserialize type 'a' to a binary representation
+with the same endianness as that native to the current machine.
+-}
+class SerialHost a where
+  serializeHost :: MonadPut m => a -> m ()
+  deserializeHost :: MonadGet m => m a
+
+instance SerialHost Double where
+  serializeHost = serializeHost . doubleToWord64
+  deserializeHost = liftM word64ToDouble deserializeHost
+
+instance SerialHost Float where
+  serializeHost = serializeHost . floatToWord32
+  deserializeHost = liftM word32ToFloat deserializeHost
+
+instance SerialHost Char where
+  serializeHost = putWord32host . fromIntegral . fromEnum
+  deserializeHost = liftM (toEnum . fromIntegral) getWord32host
+
+instance SerialHost Word where
+  serializeHost = putWordhost
+  deserializeHost = getWordhost
+
+instance SerialHost Word64 where
+  serializeHost = putWord64host
+  deserializeHost = getWord64host
+
+instance SerialHost Word32 where
+  serializeHost = putWord32host
+  deserializeHost = getWord32host
+
+instance SerialHost Word16 where
+  serializeHost = putWord16host
+  deserializeHost = getWord16host
+
+instance SerialHost Word8 where
+  serializeHost = putWord8
+  deserializeHost = getWord8
+
+instance SerialHost Int where
+  serializeHost = putWordhost . fromIntegral
+  deserializeHost = liftM fromIntegral getWordhost
+
+instance SerialHost Int64 where
+  serializeHost = putWord64host . fromIntegral
+  deserializeHost = liftM fromIntegral getWord64host
+
+instance SerialHost Int32 where
+  serializeHost = putWord32host . fromIntegral
+  deserializeHost = liftM fromIntegral getWord32host
+
+instance SerialHost Int16 where
+  serializeHost = putWord16host . fromIntegral
+  deserializeHost = liftM fromIntegral getWord16host
+
+instance SerialHost Int8 where
+  serializeHost = putWord8 . fromIntegral
+  deserializeHost = liftM fromIntegral getWord8
+
 ------------------------------------------------------------------------------
 -- Serialization
 ------------------------------------------------------------------------------
 
+{-| Methods to serialize and deserialize type 'a' to a binary representation
+
+Instances provided here for fixed-with Integers and Words are big endian.
+Instances for strict and lazy bytestrings store also the length of bytestring
+big endian. Instances for Word and Int are host endian as they are
+machine-specific types.
+-}
 class Serial a where
   serialize :: MonadPut m => a -> m ()
 #ifndef HLINT
@@ -118,58 +283,55 @@ restore = do
   unless (n >= required) $ fail "restore: Required more bytes"
   return $ unsafePerformIO $ withForeignPtr fp $ \p -> peekByteOff p o
 
-foreign import ccall floatToWord32 :: Float -> Word32
-foreign import ccall word32ToFloat :: Word32 -> Float
-foreign import ccall doubleToWord64 :: Double -> Word64
-foreign import ccall word64ToDouble :: Word64 -> Double
-
 instance Serial Double where
-  serialize = serialize . doubleToWord64
-  deserialize = liftM word64ToDouble deserialize
+  serialize = serializeBE
+  deserialize = deserializeBE
 
 instance Serial Float where
-  serialize = serialize . floatToWord32
-  deserialize = liftM word32ToFloat deserialize
+  serialize = serializeBE
+  deserialize = deserializeBE
 
 instance Serial Char where
-  serialize = putWord32be . fromIntegral . fromEnum
-  deserialize = liftM (toEnum . fromIntegral) getWord32be
+  serialize = serializeBE
+  deserialize = deserializeBE
 
+ -- no BE instance
 instance Serial Word where
-  serialize = putWordhost
-  deserialize = getWordhost
+  serialize = serializeHost
+  deserialize = deserializeHost
 
 instance Serial Word64 where
-  serialize = putWord64be
-  deserialize = getWord64be
+  serialize = serializeBE
+  deserialize = deserializeBE
 
 instance Serial Word32 where
-  serialize = putWord32be
-  deserialize = getWord32be
+  serialize = serializeBE
+  deserialize = deserializeBE
 
 instance Serial Word16 where
-  serialize = putWord16be
-  deserialize = getWord16be
+  serialize = serializeBE
+  deserialize = deserializeBE
 
 instance Serial Word8 where
   serialize = putWord8
   deserialize = getWord8
 
+ -- no BE instance
 instance Serial Int where
-  serialize = putWordhost . fromIntegral
-  deserialize = liftM fromIntegral getWordhost
+  serialize = serializeHost
+  deserialize = deserializeHost
 
 instance Serial Int64 where
-  serialize = putWord64be . fromIntegral
-  deserialize = liftM fromIntegral getWord64be
+  serialize = serializeBE
+  deserialize = deserializeBE
 
 instance Serial Int32 where
-  serialize = putWord32be . fromIntegral
-  deserialize = liftM fromIntegral getWord32be
+  serialize = serializeBE
+  deserialize = deserializeBE
 
 instance Serial Int16 where
-  serialize = putWord16be . fromIntegral
-  deserialize = liftM fromIntegral getWord16be
+  serialize = serializeBE
+  deserialize = deserializeBE
 
 instance Serial Int8 where
   serialize = putWord8 . fromIntegral
