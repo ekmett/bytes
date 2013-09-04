@@ -18,20 +18,17 @@
 -- Stability :  experimental
 -- Portability: non-portable
 --
--- This module contains four classes, each providing methods to
--- serialize and deserialize types. 'Serial' is the main class, to
--- be used for the canonical way to serialize a specific
--- type. 'SerialBE' and 'SerialLE' in turn are used to respectively
--- implement big endian and little endian serializations.
+-- This module contains two main classes, each providing methods to
+-- serialize and deserialize types. 'Serial' is the primary class,
+-- to be used for the canonical way to serialize a specific
+-- type. 'SerialEndian' is used to provide endian-specific methods
+-- for serializing a type.
 --------------------------------------------------------------------
 module Data.Bytes.Serial
-  ( SerialBE(..)
-  , SerialLE(..)
-  , SerialHost(..)
+  ( SerialEndian(..)
   , Serial(..)
   , GSerial(..)
-  , GSerialBE(..)
-  , GSerialLE(..)
+  , GSerialEndian(..)
   , Serial1(..), serialize1, deserialize1
   , GSerial1(..)
   , Serial2(..), serialize2, deserialize2
@@ -72,137 +69,130 @@ foreign import ccall word64ToDouble :: Word64 -> Double
 -- Endianness-Dependant Serialization
 ------------------------------------------------------------------------------
 
-{-| Methods to serialize and deserialize type 'a' to a big endian binary
-representation
+{-| Methods to serialize and deserialize type 'a' to a big and little endian
+binary representations. Methods suffixed with "host" are automatically defined
+to use equal the methods corresponding to the current machine's native
+endianness, but they can be overridden.
 -}
-class SerialBE a where
+class SerialEndian a where
   serializeBE :: MonadPut m => a -> m ()
 #ifndef HLINT
-  default serializeBE :: (MonadPut m, GSerialBE (Rep a), Generic a) => a -> m ()
+  default serializeBE :: (MonadPut m, GSerialEndian (Rep a), Generic a) => a -> m ()
   serializeBE = gserializeBE . from
 #endif
 
   deserializeBE :: MonadGet m => m a
 #ifndef HLINT
-  default deserializeBE :: (MonadGet m, GSerialBE (Rep a), Generic a) => m a
+  default deserializeBE :: (MonadGet m, GSerialEndian (Rep a), Generic a) => m a
   deserializeBE = liftM to gdeserializeBE
 #endif
 
-instance SerialBE Double where
-  serializeBE = serializeBE . doubleToWord64
-  deserializeBE = liftM word64ToDouble deserializeBE
-
-instance SerialBE Float where
-  serializeBE = serializeBE . floatToWord32
-  deserializeBE = liftM word32ToFloat deserializeBE
-
-instance SerialBE Char where
-  serializeBE = putWord32be . fromIntegral . fromEnum
-  deserializeBE = liftM (toEnum . fromIntegral) getWord32be
-
-instance SerialBE Word64 where
-  serializeBE = putWord64be
-  deserializeBE = getWord64be
-
-instance SerialBE Word32 where
-  serializeBE = putWord32be
-  deserializeBE = getWord32be
-
-instance SerialBE Word16 where
-  serializeBE = putWord16be
-  deserializeBE = getWord16be
-
-instance SerialBE Int64 where
-  serializeBE = putWord64be . fromIntegral
-  deserializeBE = liftM fromIntegral getWord64be
-
-instance SerialBE Int32 where
-  serializeBE = putWord32be . fromIntegral
-  deserializeBE = liftM fromIntegral getWord32be
-
-instance SerialBE Int16 where
-  serializeBE = putWord16be . fromIntegral
-  deserializeBE = liftM fromIntegral getWord16be
-
-
-{-| Methods to serialize and deserialize type 'a' to a little endian binary
-representation
--}
-class SerialLE a where
   serializeLE :: MonadPut m => a -> m ()
 #ifndef HLINT
-  default serializeLE :: (MonadPut m, GSerialLE (Rep a), Generic a) => a -> m ()
+  default serializeLE :: (MonadPut m, GSerialEndian (Rep a), Generic a) => a -> m ()
   serializeLE = gserializeLE . from
 #endif
 
   deserializeLE :: MonadGet m => m a
 #ifndef HLINT
-  default deserializeLE :: (MonadGet m, GSerialLE (Rep a), Generic a) => m a
+  default deserializeLE :: (MonadGet m, GSerialEndian (Rep a), Generic a) => m a
   deserializeLE = liftM to gdeserializeLE
 #endif
 
-instance SerialLE Double where
+  serializeHost :: MonadPut m => a -> m ()
+  deserializeHost :: MonadGet m => m a
+#ifdef WORDS_BIGENDIAN
+  serializeHost = serializeBE
+  deserializeHost = deserializeBE
+#else
+  serializeHost = serializeLE
+  deserializeHost = deserializeLE
+#endif
+
+instance SerialEndian Double where
+  serializeBE = serializeBE . doubleToWord64
+  deserializeBE = liftM word64ToDouble deserializeBE
+
   serializeLE = serializeLE . doubleToWord64
   deserializeLE = liftM word64ToDouble deserializeLE
 
-instance SerialLE Float where
+instance SerialEndian Float where
+  serializeBE = serializeBE . floatToWord32
+  deserializeBE = liftM word32ToFloat deserializeBE
+
   serializeLE = serializeLE . floatToWord32
   deserializeLE = liftM word32ToFloat deserializeLE
 
-instance SerialLE Char where
+instance SerialEndian Char where
+  serializeBE = putWord32be . fromIntegral . fromEnum
+  deserializeBE = liftM (toEnum . fromIntegral) getWord32be
+
   serializeLE = putWord32le . fromIntegral . fromEnum
   deserializeLE = liftM (toEnum . fromIntegral) getWord32le
 
-instance SerialLE Word64 where
+instance SerialEndian Word64 where
+  serializeBE = putWord64be
+  deserializeBE = getWord64be
+
   serializeLE = putWord64le
   deserializeLE = getWord64le
 
-instance SerialLE Word32 where
+instance SerialEndian Word32 where
+  serializeBE = putWord32be
+  deserializeBE = getWord32be
+
   serializeLE = putWord32le
   deserializeLE = getWord32le
 
-instance SerialLE Word16 where
+instance SerialEndian Word16 where
+  serializeBE = putWord16be
+  deserializeBE = getWord16be
+
   serializeLE = putWord16le
   deserializeLE = getWord16le
 
-instance SerialLE Int64 where
+instance SerialEndian Int64 where
+  serializeBE = putWord64be . fromIntegral
+  deserializeBE = liftM fromIntegral getWord64be
+
   serializeLE = putWord64le . fromIntegral
   deserializeLE = liftM fromIntegral getWord64le
 
-instance SerialLE Int32 where
+instance SerialEndian Int32 where
+  serializeBE = putWord32be . fromIntegral
+  deserializeBE = liftM fromIntegral getWord32be
+
   serializeLE = putWord32le . fromIntegral
   deserializeLE = liftM fromIntegral getWord32le
 
-instance SerialLE Int16 where
+instance SerialEndian Int16 where
+  serializeBE = putWord16be . fromIntegral
+  deserializeBE = liftM fromIntegral getWord16be
+
   serializeLE = putWord16le . fromIntegral
   deserializeLE = liftM fromIntegral getWord16le
 
+onlyHost :: Monad m => String -> m a -- sig avoids monomorphism restriction
+onlyHost t =
+  fail $ "Only native endianness serialization for " ++ t ++ " is supported."
 
-{-| Methods to serialize and deserialize type 'a' to a binary representation
-with the same endianness as that native to the current machine.
--}
-class SerialHost a where
-  serializeHost :: MonadPut m => a -> m ()
-  deserializeHost :: MonadGet m => m a
-#ifndef HLINT
-#ifdef WORDS_BIGENDIAN
-  default serializeHost :: (SerialBE a, MonadPut m) => a -> m ()
-  serializeHost = serializeBE
-  default deserializeHost :: (SerialBE a, MonadGet m) => m a
-  deserializeHost = deserializeBE
-#else
-  default serializeHost :: (SerialLE a, MonadPut m) => a -> m ()
-  serializeHost = serializeLE
-  default deserializeHost :: (SerialLE a, MonadGet m) => m a
-  deserializeHost = deserializeLE
-#endif
-#endif
+instance SerialEndian Word where
+  serializeBE = onlyHost "Word"
+  deserializeBE = onlyHost "Word"
 
-instance SerialHost Word where
+  serializeLE = onlyHost "Word"
+  deserializeLE = onlyHost "Word"
+
   serializeHost = putWordhost
   deserializeHost = getWordhost
 
-instance SerialHost Int where
+instance SerialEndian Int where
+  serializeBE = onlyHost "Int"
+  deserializeBE = onlyHost "Int"
+
+  serializeLE = onlyHost "Int"
+  deserializeLE = onlyHost "Int"
+
   serializeHost = putWordhost . fromIntegral
   deserializeHost = liftM fromIntegral getWordhost
 
@@ -391,39 +381,36 @@ instance Serial a => GSerial (K1 i a) where
 
 
 -- | Used internally to provide generic big-endian serialization
-class GSerialBE f where
+class GSerialEndian f where
   gserializeBE :: MonadPut m => f a -> m ()
 #ifndef HLINT
   default gserializeBE :: (MonadPut m, GSerial f) => f a -> m ()
   gserializeBE = gserialize
 #endif
+
   gdeserializeBE :: MonadGet m => m (f a)
 #ifndef HLINT
   default gdeserializeBE :: (MonadGet m, GSerial f) => m (f a)
   gdeserializeBE = gdeserialize
 #endif
 
--- only difference between GSerialBE and GSerial
-instance SerialBE a => GSerialBE (K1 i a) where
-  gserializeBE (K1 x) = serializeBE x
-  gdeserializeBE = liftM K1 deserializeBE
-
-
--- | Used internally to provide generic little-endian serialization
-class GSerialLE f where
   gserializeLE :: MonadPut m => f a -> m ()
 #ifndef HLINT
   default gserializeLE :: (MonadPut m, GSerial f) => f a -> m ()
   gserializeLE = gserialize
 #endif
+
   gdeserializeLE :: MonadGet m => m (f a)
 #ifndef HLINT
   default gdeserializeLE :: (MonadGet m, GSerial f) => m (f a)
   gdeserializeLE = gdeserialize
 #endif
 
--- only difference between GSerialLE and GSerial
-instance SerialLE a => GSerialLE (K1 i a) where
+-- only difference between GSerialEndian and GSerial
+instance SerialEndian a => GSerialEndian (K1 i a) where
+  gserializeBE (K1 x) = serializeBE x
+  gdeserializeBE = liftM K1 deserializeBE
+
   gserializeLE (K1 x) = serializeLE x
   gdeserializeLE = liftM K1 deserializeLE
 
