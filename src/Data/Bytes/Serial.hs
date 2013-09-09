@@ -172,30 +172,6 @@ instance SerialEndian Int16 where
   serializeLE = putWord16le . fromIntegral
   deserializeLE = liftM fromIntegral getWord16le
 
-onlyHost :: Monad m => String -> m a -- sig avoids monomorphism restriction
-onlyHost t =
-  fail $ "Only native endianness serialization for " ++ t ++ " is supported."
-
-instance SerialEndian Word where
-  serializeBE = onlyHost "Word"
-  deserializeBE = onlyHost "Word"
-
-  serializeLE = onlyHost "Word"
-  deserializeLE = onlyHost "Word"
-
-  serializeHost = putWordhost
-  deserializeHost = getWordhost
-
-instance SerialEndian Int where
-  serializeBE = onlyHost "Int"
-  deserializeBE = onlyHost "Int"
-
-  serializeLE = onlyHost "Int"
-  deserializeLE = onlyHost "Int"
-
-  serializeHost = putWordhost . fromIntegral
-  deserializeHost = liftM fromIntegral getWordhost
-
 ------------------------------------------------------------------------------
 -- Serialization
 ------------------------------------------------------------------------------
@@ -274,10 +250,10 @@ instance Serial Char where
   serialize = serializeBE
   deserialize = deserializeBE
 
- -- no BE instance
+ -- host endian
 instance Serial Word where
-  serialize = serializeHost
-  deserialize = deserializeHost
+  serialize = putWordhost
+  deserialize = getWordhost
 
 instance Serial Word64 where
   serialize = serializeBE
@@ -295,10 +271,10 @@ instance Serial Word8 where
   serialize = putWord8
   deserialize = getWord8
 
- -- no BE instance
+ -- host endian
 instance Serial Int where
-  serialize = serializeHost
-  deserialize = deserializeHost
+  serialize = putWordhost . fromIntegral
+  deserialize = liftM fromIntegral getWordhost
 
 instance Serial Int64 where
   serialize = serializeBE
