@@ -25,14 +25,24 @@
 -- for serializing a type.
 --------------------------------------------------------------------
 module Data.Bytes.Serial
-  ( SerialEndian(..)
-  , Serial(..)
+  (
+  -- * Serialization
+    Serial(..)
+  -- * Specifying endianness
+  , SerialEndian(..)
+  -- * Higher-order
+  -- $higher
+  , Serial1(..)
+  , serialize1, deserialize1
+  , Serial2(..)
+  , serialize2, deserialize2
+  -- * Storable
+  , store, restore
+  -- * Generics
+  -- $generics
   , GSerial(..)
   , GSerialEndian(..)
-  , Serial1(..), serialize1, deserialize1
   , GSerial1(..)
-  , Serial2(..), serialize2, deserialize2
-  , store, restore
   ) where
 
 import Control.Monad
@@ -227,10 +237,12 @@ instance (Serial a, Serial b, Serial c, Serial d, Serial e) => Serial (a, b, c, 
 
 instance Serial Bool
 
+-- | serialize any 'Storable' in a host-specific format.
 store :: (MonadPut m, Storable a) => a -> m ()
 store a = putByteString bs
   where bs = unsafePerformIO $ create (sizeOf a) $ \ p -> poke (castPtr p) a
 
+-- | deserialize any 'Storable' in a host-specific format.
 restore :: forall m a. (MonadGet m, Storable a) => m a
 restore = do
   let required = sizeOf (undefined :: a)
@@ -320,6 +332,11 @@ instance (Serial k, Serial v) => Serial (Map.Map k v) where
 -- Generic Serialization
 ------------------------------------------------------------------------------
 
+-- $generics
+--
+-- You probably will never need to care that these exist except they
+-- provide us with default definitions for 'Serial' and 'SerialEndian'
+
 -- | Used internally to provide generic serialization
 class GSerial f where
   gserialize :: MonadPut m => f a -> m ()
@@ -393,6 +410,11 @@ instance SerialEndian a => GSerialEndian (K1 i a) where
 ------------------------------------------------------------------------------
 -- Higher-Rank Serialization
 ------------------------------------------------------------------------------
+
+-- $higher
+--
+-- These classes provide us with the ability to serialize containers that need
+-- polymorphic recursion.
 
 class Serial1 f where
   serializeWith :: MonadPut m => (a -> m ()) -> f a -> m ()
