@@ -1,3 +1,7 @@
+0.13
+----
+* Fixed an issue caused by [deserializing illegal maps](http://www.reddit.com/r/haskell/comments/1q4r3b/mindbending_behavior_for_deserialization_in/).
+
 0.11.5
 ------
 * Fixed issue #7, permitting the doctests to function against bytestring 0.9

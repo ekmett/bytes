@@ -310,21 +310,21 @@ instance Serial Void where
 
 instance Serial ISet.IntSet where
   serialize = serialize . ISet.toAscList
-  deserialize = ISet.fromDistinctAscList `liftM` deserialize
+  deserialize = ISet.fromList `liftM` deserialize
 
 instance Serial a => Serial (Seq.Seq a) where
   serialize = serializeWith serialize
   deserialize = deserializeWith deserialize
 
-instance Serial a => Serial (Set.Set a) where
-  serialize = serializeWith serialize
-  deserialize = deserializeWith deserialize
+instance (Serial a, Ord a) => Serial (Set.Set a) where
+  serialize = serialize . Set.toAscList
+  deserialize = Set.fromList `liftM` deserialize
 
 instance Serial v => Serial (IMap.IntMap v) where
   serialize = serializeWith serialize
   deserialize = deserializeWith deserialize
 
-instance (Serial k, Serial v) => Serial (Map.Map k v) where
+instance (Serial k, Serial v, Ord k) => Serial (Map.Map k v) where
   serialize = serializeWith serialize
   deserialize = deserializeWith deserialize
 
@@ -463,19 +463,25 @@ instance Serial1 Seq.Seq where
   serializeWith pv = serializeWith pv . F.toList
   deserializeWith gv = Seq.fromList `liftM` deserializeWith gv
 
+{-
 instance Serial1 Set.Set where
   serializeWith pv = serializeWith pv . Set.toAscList
-  deserializeWith gv = Set.fromDistinctAscList `liftM` deserializeWith gv
+  deserializeWith gv = Set.fromList `liftM` deserializeWith gv
+-}
 
 instance Serial1 IMap.IntMap where
   serializeWith pv = serializeWith (serializeWith2 serialize pv)
                    . IMap.toAscList
-  deserializeWith gv = IMap.fromDistinctAscList
+  deserializeWith gv = IMap.fromList
                `liftM` deserializeWith (deserializeWith2 deserialize gv)
 
-instance Serial k => Serial1 (Map.Map k) where
-  serializeWith = serializeWith2 serialize
-  deserializeWith = deserializeWith2 deserialize
+instance (Ord k, Serial k) => Serial1 (Map.Map k) where
+  -- serializeWith = serializeWith2 serialize
+  -- deserializeWith = deserializeWith2 deserialize
+  serializeWith pv = serializeWith (serializeWith2 serialize pv)
+                   . Map.toAscList
+  deserializeWith gv = Map.fromList
+               `liftM` deserializeWith (deserializeWith2 deserialize gv)
 
 serialize1 :: (MonadPut m, Serial1 f, Serial a) => f a -> m ()
 serialize1 = serializeWith serialize
@@ -571,8 +577,3 @@ instance (Serial a, Serial b) => Serial2 ((,,,) a b) where
 instance (Serial a, Serial b, Serial c) => Serial2 ((,,,,) a b c) where
   serializeWith2 f g (a, b, c, d, e) = serialize a >> serialize b >> serialize c >> f d >> g e
   deserializeWith2 m n = liftM5 (,,,,) deserialize deserialize deserialize m n
-
-instance Serial2 Map.Map where
-  serializeWith2 pk pv = serializeWith (serializeWith2 pk pv) . Map.toAscList
-  deserializeWith2 gk gv = Map.fromDistinctAscList
-                   `liftM` deserializeWith (deserializeWith2 gk gv)
