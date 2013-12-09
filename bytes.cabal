@@ -1,6 +1,6 @@
 name:          bytes
 category:      Data, Serialization
-version:       0.13
+version:       0.13.0.1
 license:       BSD3
 cabal-version: >= 1.8
 license-file:  LICENSE
@@ -48,7 +48,7 @@ library
     containers                >= 0.3      && < 1,
     ghc-prim,
     mtl                       >= 2.0      && < 2.2,
-    text                      >= 0.2      && < 1,
+    text                      >= 0.2      && < 1.1,
     transformers              >= 0.2      && < 0.4,
     transformers-compat       >= 0.1      && < 1,
     void                      >= 0.6      && < 0.7
