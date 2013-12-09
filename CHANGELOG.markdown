@@ -1,3 +1,7 @@
+0.13.0.1
+--------
+* Bumped dependency on `text` to support 1.0
+
 0.13
 ----
 * Fixed an issue caused by [deserializing illegal maps](http://www.reddit.com/r/haskell/comments/1q4r3b/mindbending_behavior_for_deserialization_in/).
