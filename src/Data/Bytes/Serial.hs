@@ -348,8 +348,10 @@ getVarInt n
   | otherwise = return $ fromIntegral n
 {-# INLINE getVarInt #-}
 
+-- |
 -- $setup
 -- >>> import Data.Word
+-- >>> import Data.Fixed
 -- >>> import Data.Bytes.Serial
 
 -- | Integer/Word types serialized to base-128 variable-width ints.
@@ -366,13 +368,10 @@ instance (Bits n, Integral n, Bits (Unsigned n), Integral (Unsigned n)) => Seria
   deserialize = getWord8 >>= getVarInt
   {-# INLINE deserialize #-}
 
--- $setup
--- >>> import Data.Fixed
--- >>> import Data.Bytes.Serial
-
--- >>> deserialize . serialize $ (1.82::Fixed E2)
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (1.82::Fixed E2))::Fixed E2
 -- 1.82
-instance forall a. HasResolution a => Serial (Fixed a) where
+instance HasResolution a => Serial (Fixed a) where
   serialize f =
       serialize i
     where
