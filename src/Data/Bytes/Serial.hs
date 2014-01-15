@@ -457,8 +457,8 @@ instance Serial ZonedTime where
 -- >>> runGetL deserialize $ runPutL $ serialize GT::Ordering
 -- GT
 instance Serial Ordering where
-  serialize = serialize . fromEnum
-  deserialize = toEnum `liftM` deserialize
+  serialize = serialize . (fromIntegral::Int -> Int8) . fromEnum
+  deserialize = (toEnum . (fromIntegral::Int8 -> Int)) `liftM` deserialize
 
 ------------------------------------------------------------------------------
 -- Generic Serialization
