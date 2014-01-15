@@ -49,10 +49,15 @@ import Control.Monad
 import qualified Data.Foldable as F
 import Data.Bytes.Get
 import Data.Bytes.Put
+import Data.Bytes.Signed
+import Data.Bytes.VarInt
 import Data.ByteString.Internal
 import Data.ByteString.Lazy as Lazy
 import Data.ByteString as Strict
 import Data.Int
+import Data.Bits
+import Data.Time
+import Data.Time.Clock.TAI
 import qualified Data.IntMap as IMap
 import qualified Data.IntSet as ISet
 import qualified Data.Map as Map
@@ -64,6 +69,8 @@ import Data.Text.Lazy as LText
 import Data.Text.Lazy.Encoding as LText
 import Data.Void
 import Data.Word
+import Data.Fixed
+import Data.Ratio
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Foreign.Storable
@@ -327,6 +334,131 @@ instance Serial v => Serial (IMap.IntMap v) where
 instance (Serial k, Serial v, Ord k) => Serial (Map.Map k v) where
   serialize = serializeWith serialize
   deserialize = deserializeWith deserialize
+
+putVarInt :: (MonadPut m, Integral a, Bits a) => a -> m ()
+putVarInt n
+  | n < 0x80 = putWord8 $ fromIntegral n
+  | otherwise = do
+    putWord8 $ setBit (fromIntegral n) 7
+    putVarInt $ shiftR n 7
+{-# INLINE putVarInt #-}
+
+getVarInt :: (MonadGet m, Num b, Bits b) => Word8 -> m b
+getVarInt n
+  | testBit n 7 = do
+    VarInt m <- getWord8 >>= getVarInt
+    return $ shiftL m 7 .|. clearBit (fromIntegral n) 7
+  | otherwise = return $ fromIntegral n
+{-# INLINE getVarInt #-}
+
+-- |
+-- $setup
+-- >>> import Data.Word
+-- >>> import Data.Fixed
+-- >>> import Data.Bytes.Serial
+
+-- | Integer/Word types serialized to base-128 variable-width ints.
+--
+-- >>> import Data.Monoid (mconcat)
+-- >>> import qualified Data.ByteString.Lazy as BSL
+-- >>> mconcat $ BSL.toChunks $ runPutL $ serialize (97 :: Word64)
+-- "\NUL\NUL\NUL\NUL\NUL\NUL\NULa"
+-- >>> mconcat $ BSL.toChunks $ runPutL $ serialize (97 :: VarInt Word64)
+-- "a"
+instance (Bits n, Integral n, Bits (Unsigned n), Integral (Unsigned n)) => Serial (VarInt n) where
+  serialize (VarInt n) = putVarInt $ unsigned n
+  {-# INLINE serialize #-}
+  deserialize = getWord8 >>= getVarInt
+  {-# INLINE deserialize #-}
+
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (1.82::Fixed E2))::Fixed E2
+-- 1.82
+instance HasResolution a => Serial (Fixed a) where
+  serialize f =
+      serialize i
+    where
+      i :: VarInt Integer
+      i = VarInt . truncate . (* r) $ f
+      r = fromInteger $ resolution f
+  deserialize =
+    (((flip (/)) (fromInteger $ resolution (undefined::Fixed a))) . fromInteger . unVarInt) `liftM` deserialize
+
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (1.82::DiffTime))::DiffTime
+-- 1.82s
+instance Serial DiffTime where
+  serialize = serialize . (fromRational . toRational::DiffTime -> Pico)
+  deserialize = (fromRational . toRational::Pico -> DiffTime) `liftM` deserialize
+
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (1.82::DiffTime))::DiffTime
+-- 1.82s
+instance Serial NominalDiffTime where
+  serialize = serialize . (fromRational . toRational::NominalDiffTime -> Pico)
+  deserialize = (fromRational . toRational::Pico -> NominalDiffTime) `liftM` deserialize
+
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (ModifiedJulianDay 1))::Day
+-- 1858-11-18
+instance Serial Day where
+  serialize = serialize . VarInt . toModifiedJulianDay
+  deserialize = (ModifiedJulianDay . unVarInt) `liftM` deserialize
+
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (read "2014-01-01 10:54:42.478031 UTC"::UTCTime))::UTCTime
+-- 2014-01-01 10:54:42.478031 UTC
+instance Serial UTCTime where
+  serialize (UTCTime d t) = serialize (d, t)
+  deserialize = deserialize >>= (\(d, t) -> return $ UTCTime d t)
+
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (addAbsoluteTime 18.2 taiEpoch))::AbsoluteTime
+-- 1858-11-17 00:00:18.2 TAI
+instance Serial AbsoluteTime where
+  serialize = serialize . ((flip diffAbsoluteTime) taiEpoch)
+  deserialize = ((flip addAbsoluteTime) taiEpoch) `liftM` deserialize
+
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (5 % 11::Ratio Int))::Ratio Int
+-- 5 % 11
+instance (Bits a, Bits (Unsigned a), Integral (Unsigned a), Integral a) => Serial (Ratio a) where
+  serialize r = serialize (VarInt $ numerator r, VarInt $ denominator r)
+  deserialize = (\(n, d) -> (unVarInt n) % (unVarInt d)) `liftM` deserialize
+
+-- |
+-- >>> getModJulianDate $ (runGetL deserialize $ runPutL $ serialize (ModJulianDate $ 5 % 11)::UniversalTime)
+-- 5 % 11
+instance Serial UniversalTime where
+  serialize = serialize . getModJulianDate
+  deserialize = ModJulianDate `liftM` deserialize
+
+instance Serial TimeZone where
+  serialize (TimeZone m s n) = serialize (m, s, n)
+  deserialize = (\(m, s, n) -> TimeZone m s n) `liftM` deserialize
+
+instance Serial TimeOfDay where
+  serialize (TimeOfDay h m s) = serialize (h, m, s)
+  deserialize = (\(h, m, s) -> TimeOfDay h m s) `liftM` deserialize
+
+instance Serial LocalTime where
+  serialize (LocalTime d t) = serialize (d, t)
+  deserialize = (\(d, t) -> LocalTime d t) `liftM` deserialize
+
+instance Serial ZonedTime where
+  serialize (ZonedTime l z) = serialize (l, z)
+  deserialize = (\(l, z) -> ZonedTime l z) `liftM` deserialize
+
+-- |
+-- >>> runGetL deserialize $ runPutL $ serialize LT::Ordering
+-- LT
+-- >>> runGetL deserialize $ runPutL $ serialize EQ::Ordering
+-- EQ
+-- >>> runGetL deserialize $ runPutL $ serialize GT::Ordering
+-- GT
+instance Serial Ordering where
+  serialize = serialize . (fromIntegral::Int -> Int8) . fromEnum
+  deserialize = (toEnum . (fromIntegral::Int8 -> Int)) `liftM` deserialize
 
 ------------------------------------------------------------------------------
 -- Generic Serialization

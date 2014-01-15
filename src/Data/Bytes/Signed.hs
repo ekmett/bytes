@@ -26,6 +26,7 @@ type instance Unsigned Int8 = Word8
 type instance Unsigned Int16 = Word16
 type instance Unsigned Int32 = Word32
 type instance Unsigned Int64 = Word64
+type instance Unsigned Integer = Integer
 
 type instance Unsigned Word = Word
 type instance Unsigned Word8 = Word8
@@ -37,11 +38,12 @@ unsigned :: (Integral i, Num (Unsigned i)) => i -> Unsigned i
 unsigned = fromIntegral
 
 type family Signed i :: *
-type instance Signed Int    = Int
-type instance Signed Int8   = Int8
-type instance Signed Int16  = Int16
-type instance Signed Int32  = Int32
-type instance Signed Int64  = Int64
+type instance Signed Int     = Int
+type instance Signed Int8    = Int8
+type instance Signed Int16   = Int16
+type instance Signed Int32   = Int32
+type instance Signed Int64   = Int64
+type instance Signed Integer = Integer
 
 type instance Signed Word   = Int
 type instance Signed Word8  = Int8
