@@ -49,6 +49,7 @@ library
     ghc-prim,
     mtl                       >= 2.0      && < 2.2,
     text                      >= 0.2      && < 1.1,
+    time                      >= 1.2      && < 1.5,
     transformers              >= 0.2      && < 0.4,
     transformers-compat       >= 0.1      && < 1,
     void                      >= 0.6      && < 0.7

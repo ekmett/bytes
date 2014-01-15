@@ -56,6 +56,7 @@ import Data.ByteString.Lazy as Lazy
 import Data.ByteString as Strict
 import Data.Int
 import Data.Bits
+import Data.Time
 import qualified Data.IntMap as IMap
 import qualified Data.IntSet as ISet
 import qualified Data.Map as Map
@@ -380,6 +381,34 @@ instance HasResolution a => Serial (Fixed a) where
       r = fromInteger $ resolution f
   deserialize =
     (((flip (/)) (fromInteger $ resolution (undefined::Fixed a))) . fromInteger . unVarInt) `liftM` deserialize
+
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (1.82::DiffTime))::DiffTime
+-- 1.82s
+instance Serial DiffTime where
+  serialize = serialize . (fromRational . toRational::DiffTime -> Pico)
+  deserialize = (fromRational . toRational::Pico -> DiffTime) `liftM` deserialize
+
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (1.82::DiffTime))::DiffTime
+-- 1.82s
+instance Serial NominalDiffTime where
+  serialize = serialize . (fromRational . toRational::NominalDiffTime -> Pico)
+  deserialize = (fromRational . toRational::Pico -> NominalDiffTime) `liftM` deserialize
+
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (ModifiedJulianDay 1))::Day
+-- 1858-11-18
+instance Serial Day where
+  serialize = serialize . VarInt . toModifiedJulianDay
+  deserialize = (ModifiedJulianDay . unVarInt) `liftM` deserialize
+
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (read "2014-01-01 10:54:42.478031 UTC"::UTCTime))::UTCTime
+-- 2014-01-01 10:54:42.478031 UTC
+instance Serial UTCTime where
+  serialize (UTCTime d t) = serialize (d, t)
+  deserialize = deserialize >>= (\(d, t) -> return $ UTCTime d t)
 
 ------------------------------------------------------------------------------
 -- Generic Serialization
