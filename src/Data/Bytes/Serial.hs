@@ -57,6 +57,7 @@ import Data.ByteString as Strict
 import Data.Int
 import Data.Bits
 import Data.Time
+import Data.Time.Clock.TAI
 import qualified Data.IntMap as IMap
 import qualified Data.IntSet as ISet
 import qualified Data.Map as Map
@@ -69,6 +70,7 @@ import Data.Text.Lazy.Encoding as LText
 import Data.Void
 import Data.Word
 import Data.Fixed
+import Data.Ratio
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Foreign.Storable
@@ -409,6 +411,54 @@ instance Serial Day where
 instance Serial UTCTime where
   serialize (UTCTime d t) = serialize (d, t)
   deserialize = deserialize >>= (\(d, t) -> return $ UTCTime d t)
+
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (addAbsoluteTime 18.2 taiEpoch))::AbsoluteTime
+-- 1858-11-17 00:00:18.2 TAI
+instance Serial AbsoluteTime where
+  serialize = serialize . ((flip diffAbsoluteTime) taiEpoch)
+  deserialize = ((flip addAbsoluteTime) taiEpoch) `liftM` deserialize
+
+-- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (5 % 11::Ratio Int))::Ratio Int
+-- 5 % 11
+instance (Bits a, Bits (Unsigned a), Integral (Unsigned a), Integral a) => Serial (Ratio a) where
+  serialize r = serialize (VarInt $ numerator r, VarInt $ denominator r)
+  deserialize = (\(n, d) -> (unVarInt n) % (unVarInt d)) `liftM` deserialize
+
+-- |
+-- >>> getModJulianDate $ (runGetL deserialize $ runPutL $ serialize (ModJulianDate $ 5 % 11)::UniversalTime)
+-- 5 % 11
+instance Serial UniversalTime where
+  serialize = serialize . getModJulianDate
+  deserialize = ModJulianDate `liftM` deserialize
+
+instance Serial TimeZone where
+  serialize (TimeZone m s n) = serialize (m, s, n)
+  deserialize = (\(m, s, n) -> TimeZone m s n) `liftM` deserialize
+
+instance Serial TimeOfDay where
+  serialize (TimeOfDay h m s) = serialize (h, m, s)
+  deserialize = (\(h, m, s) -> TimeOfDay h m s) `liftM` deserialize
+
+instance Serial LocalTime where
+  serialize (LocalTime d t) = serialize (d, t)
+  deserialize = (\(d, t) -> LocalTime d t) `liftM` deserialize
+
+instance Serial ZonedTime where
+  serialize (ZonedTime l z) = serialize (l, z)
+  deserialize = (\(l, z) -> ZonedTime l z) `liftM` deserialize
+
+-- |
+-- >>> runGetL deserialize $ runPutL $ serialize LT::Ordering
+-- LT
+-- >>> runGetL deserialize $ runPutL $ serialize EQ::Ordering
+-- EQ
+-- >>> runGetL deserialize $ runPutL $ serialize GT::Ordering
+-- GT
+instance Serial Ordering where
+  serialize = serialize . fromEnum
+  deserialize = toEnum `liftM` deserialize
 
 ------------------------------------------------------------------------------
 -- Generic Serialization
