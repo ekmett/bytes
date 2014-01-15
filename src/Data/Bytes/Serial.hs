@@ -49,10 +49,13 @@ import Control.Monad
 import qualified Data.Foldable as F
 import Data.Bytes.Get
 import Data.Bytes.Put
+import Data.Bytes.Signed
+import Data.Bytes.VarInt
 import Data.ByteString.Internal
 import Data.ByteString.Lazy as Lazy
 import Data.ByteString as Strict
 import Data.Int
+import Data.Bits
 import qualified Data.IntMap as IMap
 import qualified Data.IntSet as ISet
 import qualified Data.Map as Map
@@ -64,6 +67,7 @@ import Data.Text.Lazy as LText
 import Data.Text.Lazy.Encoding as LText
 import Data.Void
 import Data.Word
+import Data.Fixed
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Foreign.Storable
@@ -327,6 +331,56 @@ instance Serial v => Serial (IMap.IntMap v) where
 instance (Serial k, Serial v, Ord k) => Serial (Map.Map k v) where
   serialize = serializeWith serialize
   deserialize = deserializeWith deserialize
+
+putVarInt :: (MonadPut m, Integral a, Bits a) => a -> m ()
+putVarInt n
+  | n < 0x80 = putWord8 $ fromIntegral n
+  | otherwise = do
+    putWord8 $ setBit (fromIntegral n) 7
+    putVarInt $ shiftR n 7
+{-# INLINE putVarInt #-}
+
+getVarInt :: (MonadGet m, Num b, Bits b) => Word8 -> m b
+getVarInt n
+  | testBit n 7 = do
+    VarInt m <- getWord8 >>= getVarInt
+    return $ shiftL m 7 .|. clearBit (fromIntegral n) 7
+  | otherwise = return $ fromIntegral n
+{-# INLINE getVarInt #-}
+
+-- $setup
+-- >>> import Data.Word
+-- >>> import Data.Bytes.Serial
+
+-- | Integer/Word types serialized to base-128 variable-width ints.
+--
+-- >>> import Data.Monoid (mconcat)
+-- >>> import qualified Data.ByteString.Lazy as BSL
+-- >>> mconcat $ BSL.toChunks $ runPutL $ serialize (97 :: Word64)
+-- "\NUL\NUL\NUL\NUL\NUL\NUL\NULa"
+-- >>> mconcat $ BSL.toChunks $ runPutL $ serialize (97 :: VarInt Word64)
+-- "a"
+instance (Bits n, Integral n, Bits (Unsigned n), Integral (Unsigned n)) => Serial (VarInt n) where
+  serialize (VarInt n) = putVarInt $ unsigned n
+  {-# INLINE serialize #-}
+  deserialize = getWord8 >>= getVarInt
+  {-# INLINE deserialize #-}
+
+-- $setup
+-- >>> import Data.Fixed
+-- >>> import Data.Bytes.Serial
+
+-- >>> deserialize . serialize $ (1.82::Fixed E2)
+-- 1.82
+instance forall a. HasResolution a => Serial (Fixed a) where
+  serialize f =
+      serialize i
+    where
+      i :: VarInt Integer
+      i = VarInt . truncate . (* r) $ f
+      r = fromInteger $ resolution f
+  deserialize =
+    (((flip (/)) (fromInteger $ resolution (undefined::Fixed a))) . fromInteger . unVarInt) `liftM` deserialize
 
 ------------------------------------------------------------------------------
 -- Generic Serialization

@@ -24,49 +24,11 @@ module Data.Bytes.VarInt
   ) where
 
 import Data.Bits
-import Data.Bytes.Get
-import Data.Bytes.Put
-import Data.Bytes.Serial
 import Data.Bytes.Signed
-import Data.Word
 
--- $setup
--- >>> import Data.Word
--- >>> import Data.Bytes.Serial
-
--- | Integer/Word types serialized to base-128 variable-width ints.
---
--- >>> import Data.Monoid (mconcat)
--- >>> import Data.ByteString.Lazy (toChunks)
--- >>> mconcat $ toChunks $ runPutL $ serialize (97 :: Word64)
--- "\NUL\NUL\NUL\NUL\NUL\NUL\NULa"
--- >>> mconcat $ toChunks $ runPutL $ serialize (97 :: VarInt Word64)
--- "a"
 newtype VarInt n = VarInt { unVarInt :: n }
   deriving (Eq, Ord, Show, Enum, Num, Integral, Bounded, Real, Bits)
 
 type instance Unsigned (VarInt n) = VarInt (Unsigned n)
 type instance Signed (VarInt n) = VarInt (Signed n)
 
-instance (Bits n, Integral n, Bits (Unsigned n), Integral (Unsigned n)) => Serial (VarInt n) where
-  serialize (VarInt n) = putVarInt $ unsigned n
-  {-# INLINE serialize #-}
-
-  deserialize = getWord8 >>= getVarInt
-  {-# INLINE deserialize #-}
-
-putVarInt :: (MonadPut m, Integral a, Bits a) => a -> m ()
-putVarInt n
-  | n < 0x80 = putWord8 $ fromIntegral n
-  | otherwise = do
-    putWord8 $ setBit (fromIntegral n) 7
-    putVarInt $ shiftR n 7
-{-# INLINE putVarInt #-}
-
-getVarInt :: (MonadGet m, Num b, Bits b) => Word8 -> m b
-getVarInt n
-  | testBit n 7 = do
-    VarInt m <- getWord8 >>= getVarInt
-    return $ shiftL m 7 .|. clearBit (fromIntegral n) 7
-  | otherwise = return $ fromIntegral n
-{-# INLINE getVarInt #-}
