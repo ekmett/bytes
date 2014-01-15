@@ -372,17 +372,24 @@ instance (Bits n, Integral n, Bits (Unsigned n), Integral (Unsigned n)) => Seria
   {-# INLINE deserialize #-}
 
 -- |
+-- >>> (runGetL deserialize $ runPutL $ serialize (1822304234^100::Integer))::Integer
+-- 115368812579128172803867366576339947332796540054052185472042218522037227934707037623902492207671987696439966697503243972076991940820348847422930433939639982092916577692754723458548819441583937289395076910527534916776189405228720063994377687015476947534961767053653973945346259230972683338173842343243493433367681264359887291905132383269175086733345253389374961758293922003996035662362278340494093804835649459223465051596978792130073960666112508481814461273829244289795707398202762289955919352549768394583446336873179280924584333491364188425976869717125645749497258775598562132278030402205794994603544837805140410310712693778605743100915046769381631247123664460203591228745772887977959388457679427407639421147498028487544882346912935398848298806021505673449774474457435816552278997100556732447852816961683577731381792363312695347606768120122976105200574809419685234274705929886121600174028733812771637390342332436695318974693376
+instance Serial Integer where
+  serialize = serialize . VarInt
+  deserialize = unVarInt `liftM` deserialize
+
+-- |
 -- >>> (runGetL deserialize $ runPutL $ serialize (1.82::Fixed E2))::Fixed E2
 -- 1.82
 instance HasResolution a => Serial (Fixed a) where
   serialize f =
       serialize i
     where
-      i :: VarInt Integer
-      i = VarInt . truncate . (* r) $ f
+      i :: Integer
+      i = truncate . (* r) $ f
       r = fromInteger $ resolution f
   deserialize =
-    (((flip (/)) (fromInteger $ resolution (undefined::Fixed a))) . fromInteger . unVarInt) `liftM` deserialize
+    (((flip (/)) (fromInteger $ resolution (undefined::Fixed a))) . fromInteger) `liftM` deserialize
 
 -- |
 -- >>> (runGetL deserialize $ runPutL $ serialize (1.82::DiffTime))::DiffTime
@@ -402,8 +409,8 @@ instance Serial NominalDiffTime where
 -- >>> (runGetL deserialize $ runPutL $ serialize (ModifiedJulianDay 1))::Day
 -- 1858-11-18
 instance Serial Day where
-  serialize = serialize . VarInt . toModifiedJulianDay
-  deserialize = (ModifiedJulianDay . unVarInt) `liftM` deserialize
+  serialize = serialize . toModifiedJulianDay
+  deserialize = ModifiedJulianDay `liftM` deserialize
 
 -- |
 -- >>> (runGetL deserialize $ runPutL $ serialize (read "2014-01-01 10:54:42.478031 UTC"::UTCTime))::UTCTime
@@ -422,9 +429,9 @@ instance Serial AbsoluteTime where
 -- |
 -- >>> (runGetL deserialize $ runPutL $ serialize (5 % 11::Ratio Int))::Ratio Int
 -- 5 % 11
-instance (Bits a, Bits (Unsigned a), Integral (Unsigned a), Integral a) => Serial (Ratio a) where
-  serialize r = serialize (VarInt $ numerator r, VarInt $ denominator r)
-  deserialize = (\(n, d) -> (unVarInt n) % (unVarInt d)) `liftM` deserialize
+instance (Serial a, Integral a) => Serial (Ratio a) where
+  serialize r = serialize (numerator r, denominator r)
+  deserialize = (\(n, d) -> n % d) `liftM` deserialize
 
 -- |
 -- >>> getModJulianDate $ (runGetL deserialize $ runPutL $ serialize (ModJulianDate $ 5 % 11)::UniversalTime)
