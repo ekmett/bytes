@@ -45,6 +45,7 @@ module Data.Bytes.Serial
   , GSerial1(..)
   ) where
 
+import Control.Applicative
 import Control.Monad
 import qualified Data.Foldable as F
 import Data.Bytes.Get
@@ -56,7 +57,12 @@ import Data.ByteString.Lazy as Lazy
 import Data.ByteString as Strict
 import Data.Int
 import Data.Bits
-import Data.Monoid
+import Data.Monoid as Monoid
+import Data.Ord (Down(..))
+import Data.Functor.Identity as Functor
+import Data.Functor.Constant as Functor
+import Data.Functor.Product  as Functor
+import Data.Functor.Reverse  as Functor
 import Data.Time
 import Data.Time.Clock.TAI
 import qualified Data.IntMap as IMap
@@ -68,6 +74,7 @@ import Data.Text as SText
 import Data.Text.Encoding as SText
 import Data.Text.Lazy as LText
 import Data.Text.Lazy.Encoding as LText
+import Data.Version (Version(..))
 import Data.Void
 import Data.Word
 import Data.Fixed
@@ -468,6 +475,35 @@ instance Serial Ordering where
   serialize = serialize . (fromIntegral::Int -> Int8) . fromEnum
   deserialize = (toEnum . (fromIntegral::Int8 -> Int)) `liftM` deserialize
 
+instance Serial a => Serial (Down a) where
+    serialize (Down a) = serialize a
+    deserialize = Down `liftM` deserialize
+
+instance Serial Version where
+    serialize (Version vb ts) = serialize (fmap VarInt vb, ts)
+    deserialize = do (vb,ts) <- deserialize
+                     return $ Version (fmap unVarInt vb) ts
+
+instance Serial a => Serial (ZipList a) where
+    serialize = serialize . getZipList
+    deserialize = ZipList <$> deserialize
+
+instance Serial a => Serial (Identity a) where
+    serialize = serialize . runIdentity
+    deserialize = Identity `liftM` deserialize
+
+instance Serial a => Serial (Constant a b) where
+    serialize = serialize . getConstant
+    deserialize = Constant `liftM` deserialize
+
+instance (Serial (f a), Serial (g a)) => Serial (Functor.Product f g a) where 
+    serialize (Pair f g) = serialize (f, g)
+    deserialize = uncurry Pair `liftM` deserialize
+
+instance Serial (f a) => Serial (Reverse f a) where
+    serialize = serialize . getReverse
+    deserialize = Reverse `liftM` deserialize
+
 ------------------------------------------------------------------------------
 -- Serialization for newtypes from 'Data.Monoid'
 ------------------------------------------------------------------------------
@@ -488,7 +524,7 @@ instance Serial a => Serial (Sum a) where
     serialize = serialize . getSum
     deserialize = Sum `liftM` deserialize
 
-instance Serial a => Serial (Product a) where
+instance Serial a => Serial (Monoid.Product a) where
     serialize = serialize . getProduct
     deserialize = Product `liftM` deserialize
 
@@ -499,6 +535,7 @@ instance Serial a => Serial (First a) where
 instance Serial a => Serial (Last a) where
     serialize = serialize . getLast
     deserialize = Last `liftM` deserialize
+
 
 
 ------------------------------------------------------------------------------
