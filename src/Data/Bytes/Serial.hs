@@ -56,6 +56,7 @@ import Data.ByteString.Lazy as Lazy
 import Data.ByteString as Strict
 import Data.Int
 import Data.Bits
+import Data.Monoid
 import Data.Time
 import Data.Time.Clock.TAI
 import qualified Data.IntMap as IMap
@@ -466,6 +467,39 @@ instance Serial ZonedTime where
 instance Serial Ordering where
   serialize = serialize . (fromIntegral::Int -> Int8) . fromEnum
   deserialize = (toEnum . (fromIntegral::Int8 -> Int)) `liftM` deserialize
+
+------------------------------------------------------------------------------
+-- Serialization for newtypes from 'Data.Monoid'
+------------------------------------------------------------------------------
+
+instance Serial a => Serial (Dual a) where
+    serialize = serialize . getDual
+    deserialize = Dual `liftM` deserialize
+
+instance Serial All where
+    serialize = serialize . getAll
+    deserialize = All `liftM` deserialize
+
+instance Serial Any where
+    serialize = serialize . getAny
+    deserialize = Any `liftM` deserialize
+
+instance Serial a => Serial (Sum a) where
+    serialize = serialize . getSum
+    deserialize = Sum `liftM` deserialize
+
+instance Serial a => Serial (Product a) where
+    serialize = serialize . getProduct
+    deserialize = Product `liftM` deserialize
+
+instance Serial a => Serial (First a) where
+    serialize = serialize . getFirst
+    deserialize = First `liftM` deserialize
+
+instance Serial a => Serial (Last a) where
+    serialize = serialize . getLast
+    deserialize = Last `liftM` deserialize
+
 
 ------------------------------------------------------------------------------
 -- Generic Serialization
