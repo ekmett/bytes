@@ -1,3 +1,8 @@
+0.14
+----
+* Lots of new instances
+* `text` bound bump to allow 1.1.
+
 0.13.0.1
 --------
 * Bumped dependency on `text` to support 1.0
