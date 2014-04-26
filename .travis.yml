@@ -14,7 +14,7 @@ install:
 script:
   - $script
   - packdeps bytes.cabal
-  - packunused
+  - packunused --ignore-package=transformers-compat
   - hlint src --cpp-define HLINT
 
 notifications:
