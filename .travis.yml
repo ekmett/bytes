@@ -6,11 +6,16 @@ before_install:
   - travis/cabal-apt-install $mode
 
 install:
+  - export PATH=~/.cabal/bin:$PATH
   - cabal configure -flib-Werror $mode
+  - cabal install packdeps packunused
   - cabal build
 
 script:
-  - $script && hlint src --cpp-define HLINT
+  - $script
+  - packdeps bytes.cabal
+  - packunused
+  - hlint src --cpp-define HLINT
 
 notifications:
   irc:
