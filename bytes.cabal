@@ -49,13 +49,15 @@ library
     bytestring                >= 0.9      && < 0.11,
     cereal                    >= 0.3.5    && < 0.5,
     containers                >= 0.3      && < 1,
-    ghc-prim,
     mtl                       >= 2.0      && < 2.2,
     text                      >= 0.2      && < 1.2,
     time                      >= 1.2      && < 1.5,
     transformers              >= 0.2      && < 0.4,
     transformers-compat       >= 0.1      && < 1,
     void                      >= 0.6      && < 0.7
+
+  if impl(ghc >= 7.4 && < 7.6)
+    build-depends: ghc-prim
 
   exposed-modules:
     Data.Bytes.Get
