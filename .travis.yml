@@ -9,7 +9,7 @@ install:
   - export PATH=~/.cabal/bin:$PATH
   - cabal configure -flib-Werror $mode
   - cabal install packdeps packunused
-  - cabal build
+  - cabal build --ghc-option=-ddump-minimal-imports
 
 script:
   - $script
