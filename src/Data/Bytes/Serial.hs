@@ -10,6 +10,9 @@
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 704
 {-# LANGUAGE Trustworthy #-}
 #endif
+#ifndef MIN_VERSION_base
+#define MIN_VERSION_base(x,y,z) 1
+#endif
 --------------------------------------------------------------------
 -- |
 -- Copyright :  (c) Edward Kmett 2013
