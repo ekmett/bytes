@@ -503,7 +503,7 @@ instance Serial a => Serial (Constant a b) where
     serialize = serialize . getConstant
     deserialize = Constant `liftM` deserialize
 
-instance (Serial (f a), Serial (g a)) => Serial (Functor.Product f g a) where 
+instance (Serial (f a), Serial (g a)) => Serial (Functor.Product f g a) where
     serialize (Pair f g) = serialize (f, g)
     deserialize = uncurry Pair `liftM` deserialize
 
