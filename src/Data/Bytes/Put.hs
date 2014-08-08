@@ -29,6 +29,7 @@ module Data.Bytes.Put
 
 import Control.Applicative
 import Control.Monad.Reader
+import Control.Monad.Trans.Except as Except
 import Control.Monad.RWS.Lazy as Lazy
 import Control.Monad.RWS.Strict as Strict
 import Control.Monad.State.Lazy as Lazy
@@ -240,6 +241,7 @@ instance (MonadPut m, Monoid w) => MonadPut (Lazy.WriterT w m)
 instance (MonadPut m, Monoid w) => MonadPut (Strict.WriterT w m)
 instance (MonadPut m, Monoid w) => MonadPut (Lazy.RWST r w s m)
 instance (MonadPut m, Monoid w) => MonadPut (Strict.RWST r w s m)
+instance (MonadPut m) => MonadPut (ExceptT e m) where
 
 -- | Put a value into a lazy 'Lazy.ByteString' using 'B.runPut'.
 runPutL :: B.Put -> Lazy.ByteString
