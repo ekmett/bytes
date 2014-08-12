@@ -27,6 +27,7 @@ module Data.Bytes.Get
 
 import Control.Applicative
 import Control.Monad.Reader
+import Control.Monad.Trans.Except as Except
 import Control.Monad.RWS.Lazy as Lazy
 import Control.Monad.RWS.Strict as Strict
 import Control.Monad.State.Lazy as Lazy
@@ -404,6 +405,24 @@ instance (MonadGet m, Monoid w) => MonadGet (Lazy.RWST r w s m) where
     where
     distribute (Left a, s', w') = Left (Left a, s', w')
     distribute (Right b, s', w') = Right (Right b, s', w')
+    factor = either id id
+  {-# INLINE lookAheadE #-}
+
+instance MonadGet m => MonadGet (ExceptT e m) where
+  type Remaining (ExceptT e m) = Remaining m
+  type Bytes (ExceptT e m) = Bytes m
+  lookAhead = mapExceptT lookAhead
+  {-# INLINE lookAhead #-}
+  lookAheadM (ExceptT m) = ExceptT (liftM factor $ lookAheadE $ liftM distribute m)
+    where
+    distribute (Left e) = (Left (Left e))
+    distribute (Right j) = (Right (Right j))
+    factor = either id id
+  {-# INLINE lookAheadM #-}
+  lookAheadE (ExceptT m) = ExceptT (liftM factor $ lookAheadE $ liftM distribute m)
+    where
+    distribute (Left e) = (Left (Left e))
+    distribute (Right a) = (Right (Right a))
     factor = either id id
   {-# INLINE lookAheadE #-}
 
