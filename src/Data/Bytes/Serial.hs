@@ -721,9 +721,9 @@ instance GSerial1 Par1 where
   gserializeWith f (Par1 a) = f a
   gdeserializeWith m = liftM Par1 m
 
-instance GSerial1 f => GSerial1 (Rec1 f) where
-  gserializeWith f (Rec1 fa) = gserializeWith f fa
-  gdeserializeWith m = liftM Rec1 (gdeserializeWith m)
+instance Serial1 f => GSerial1 (Rec1 f) where
+  gserializeWith f (Rec1 fa) = serializeWith f fa
+  gdeserializeWith m = liftM Rec1 (deserializeWith m)
 
 -- instance (Serial1 f, GSerial1 g) => GSerial1 (f :.: g) where
 
