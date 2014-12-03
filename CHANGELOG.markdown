@@ -1,3 +1,7 @@
+0.14.1.2
+--------
+* Support `void` 0.7 / GHC 7.10
+
 0.14
 ----
 * Lots of new instances
