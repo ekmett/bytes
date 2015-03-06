@@ -721,9 +721,9 @@ instance GSerial1 Par1 where
   gserializeWith f (Par1 a) = f a
   gdeserializeWith m = liftM Par1 m
 
-instance GSerial1 f => GSerial1 (Rec1 f) where
-  gserializeWith f (Rec1 fa) = gserializeWith f fa
-  gdeserializeWith m = liftM Rec1 (gdeserializeWith m)
+instance Serial1 f => GSerial1 (Rec1 f) where
+  gserializeWith f (Rec1 fa) = serializeWith f fa
+  gdeserializeWith m = liftM Rec1 (deserializeWith m)
 
 -- instance (Serial1 f, GSerial1 g) => GSerial1 (f :.: g) where
 
@@ -746,6 +746,10 @@ instance (GSerial1 f, GSerial1 g) => GSerial1 (f :+: g) where
     0 -> liftM L1 (gdeserializeWith m)
     1 -> liftM R1 (gdeserializeWith m)
     _ -> fail "Missing case"
+
+instance (Serial1 f, GSerial1 g) => GSerial1 (f :.: g) where
+  gserializeWith f (Comp1 m) = serializeWith (gserializeWith f) m
+  gdeserializeWith m = Comp1 `liftM` deserializeWith (gdeserializeWith m)
 
 instance GSerial1 f => GSerial1 (M1 i c f) where
   gserializeWith f (M1 x) = gserializeWith f x

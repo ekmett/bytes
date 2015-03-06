@@ -1,3 +1,7 @@
+0.15
+----
+* Fixed a serious bug in the semantics of Serial1 for the recursive case.
+
 0.14.1.2
 --------
 * Support `void` 0.7 / GHC 7.10
