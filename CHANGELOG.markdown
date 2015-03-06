@@ -1,6 +1,6 @@
 0.15
 ----
-* Fixed a serious bug in the semantics of Serial1 for the recursive case.
+* Fixed a serious bug in the semantics of generic `Serial1` generation for the recursive case and improved `Generic1` support for `:.:`.
 
 0.14.1.2
 --------
