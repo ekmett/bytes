@@ -1,3 +1,8 @@
+0.15.0.1
+--------
+* Updated github URLs in the .cabal file.
+* We now compile without warnings on GHC 7.10.
+
 0.15
 ----
 * Fixed a serious bug in the semantics of generic `Serial1` generation for the recursive case and improved `Generic1` support for `:.:`.
