@@ -37,11 +37,6 @@ flag test-doctests
   default: True
   manual: True
 
-flag lib-Werror
-  description: Treat warnings as errors when building.
-  default: False
-  manual: True
-
 library
   build-depends:
     base                      >= 4.3      && < 5,
@@ -66,9 +61,6 @@ library
     Data.Bytes.Signed
     Data.Bytes.VarInt
 
-  if flag(lib-Werror)
-    ghc-options: -Werror
-
   ghc-options: -Wall -fwarn-tabs -O2
   c-sources: cbits/i2d.c
   hs-source-dirs: src
@@ -88,6 +80,3 @@ test-suite doctests
       directory      >= 1.0,
       doctest        >= 0.9.1,
       filepath       >= 1.2
-
-  if impl(ghc<7.6.1)
-    ghc-options: -Werror
