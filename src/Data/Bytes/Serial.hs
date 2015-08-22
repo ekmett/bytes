@@ -61,9 +61,6 @@ import Data.ByteString as Strict
 import Data.Int
 import Data.Bits
 import Data.Monoid as Monoid
-#if MIN_VERSION_base(4, 6, 0)
-import Data.Ord (Down(..))
-#endif
 import Data.Functor.Identity as Functor
 import Data.Functor.Constant as Functor
 import Data.Functor.Product  as Functor
@@ -87,6 +84,7 @@ import Data.Ratio
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Foreign.Storable
+import GHC.Exts (Down(..))
 import GHC.Generics
 import System.IO.Unsafe
 
@@ -480,11 +478,9 @@ instance Serial Ordering where
   serialize = serialize . (fromIntegral::Int -> Int8) . fromEnum
   deserialize = (toEnum . (fromIntegral::Int8 -> Int)) `liftM` deserialize
 
-#if MIN_VERSION_base(4, 6, 0)
 instance Serial a => Serial (Down a) where
     serialize (Down a) = serialize a
     deserialize = Down `liftM` deserialize
-#endif
 
 instance Serial Version where
     serialize (Version vb ts) = serialize (fmap VarInt vb, ts)
