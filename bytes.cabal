@@ -49,6 +49,7 @@ library
     time                      >= 1.2      && < 1.6,
     transformers              >= 0.2      && < 0.5,
     transformers-compat       >= 0.3      && < 1,
+    scientific                >= 0.0      && < 1,
     void                      >= 0.6      && < 1
 
   if impl(ghc >= 7.4 && < 7.6)

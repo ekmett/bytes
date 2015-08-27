@@ -70,6 +70,7 @@ import Data.Time.Clock.TAI
 import qualified Data.IntMap as IMap
 import qualified Data.IntSet as ISet
 import qualified Data.Map as Map
+import qualified Data.Scientific as Sci
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Data.Text as SText
@@ -321,6 +322,10 @@ instance Serial Int16 where
 instance Serial Int8 where
   serialize = putWord8 . fromIntegral
   deserialize = liftM fromIntegral getWord8
+
+instance Serial Sci.Scientific where
+  serialize s = serialize (Sci.coefficient s, Sci.base10Exponent s)
+  deserialize = uncurry Sci.scientific <$> deserialize
 
 instance Serial Void where
   serialize = absurd
