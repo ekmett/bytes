@@ -65,6 +65,9 @@ import Data.Functor.Identity as Functor
 import Data.Functor.Constant as Functor
 import Data.Functor.Product  as Functor
 import Data.Functor.Reverse  as Functor
+import Data.Hashable (Hashable)
+import qualified Data.HashMap.Lazy as HMap
+import qualified Data.HashSet      as HSet
 import Data.Time
 import Data.Time.Clock.TAI
 import qualified Data.IntMap as IMap
@@ -345,6 +348,14 @@ instance Serial v => Serial (IMap.IntMap v) where
 instance (Serial k, Serial v, Ord k) => Serial (Map.Map k v) where
   serialize = serializeWith serialize
   deserialize = deserializeWith deserialize
+
+instance (Serial k, Serial v, Hashable k, Eq k) => Serial (HMap.HashMap k v) where
+  serialize = serializeWith serialize
+  deserialize = deserializeWith deserialize
+
+instance (Serial v, Hashable v, Eq v) => Serial (HSet.HashSet v) where
+  serialize = serialize . HSet.toList
+  deserialize = HSet.fromList `liftM` deserialize
 
 putVarInt :: (MonadPut m, Integral a, Bits a) => a -> m ()
 putVarInt n
@@ -694,6 +705,12 @@ instance (Ord k, Serial k) => Serial1 (Map.Map k) where
   serializeWith pv = serializeWith (serializeWith2 serialize pv)
                    . Map.toAscList
   deserializeWith gv = Map.fromList
+               `liftM` deserializeWith (deserializeWith2 deserialize gv)
+
+instance (Hashable k, Eq k, Serial k) => Serial1 (HMap.HashMap k) where
+  serializeWith pv = serializeWith (serializeWith2 serialize pv)
+                   . HMap.toList
+  deserializeWith gv = HMap.fromList
                `liftM` deserializeWith (deserializeWith2 deserialize gv)
 
 serialize1 :: (MonadPut m, Serial1 f, Serial a) => f a -> m ()
