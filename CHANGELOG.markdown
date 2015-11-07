@@ -1,3 +1,8 @@
+0.15.0.2
+--------
+* Bump `cereal` bound for 0.5.0.0
+* Add instance `Serial Natural`
+
 0.15.0.1
 --------
 * Updated github URLs in the .cabal file.

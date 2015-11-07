@@ -90,6 +90,7 @@ import Foreign.Ptr
 import Foreign.Storable
 import GHC.Exts (Down(..))
 import GHC.Generics
+import Numeric.Natural
 import System.IO.Unsafe
 
 foreign import ccall floatToWord32 :: Float -> Word32
@@ -404,6 +405,15 @@ instance (Bits n, Integral n, Bits (Unsigned n), Integral (Unsigned n)) => Seria
 instance Serial Integer where
   serialize = serialize . VarInt
   deserialize = unVarInt `liftM` deserialize
+
+#if MIN_VERSION_base(4,8,0)
+-- |
+-- >>> runGetL deserialize (runPutL (serialize (10^10::Natural))) :: Natural
+-- 10000000000
+instance Serial Natural where
+  serialize = serialize . VarInt . toInteger
+  deserialize = fromInteger . unVarInt <$> deserialize
+#endif
 
 -- |
 -- >>> (runGetL deserialize $ runPutL $ serialize (1.82::Fixed E2))::Fixed E2
