@@ -90,8 +90,11 @@ import Foreign.Ptr
 import Foreign.Storable
 import GHC.Exts (Down(..))
 import GHC.Generics
-import Numeric.Natural
 import System.IO.Unsafe
+
+#if MIN_VERSION_base(4,8,0)
+import Numeric.Natural
+#endif
 
 foreign import ccall floatToWord32 :: Float -> Word32
 foreign import ccall word32ToFloat :: Word32 -> Float
