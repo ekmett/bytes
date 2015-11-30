@@ -61,18 +61,19 @@ import Data.ByteString as Strict
 import Data.Int
 import Data.Bits
 import Data.Monoid as Monoid
-#if MIN_VERSION_base(4, 6, 0)
-import Data.Ord (Down(..))
-#endif
 import Data.Functor.Identity as Functor
 import Data.Functor.Constant as Functor
 import Data.Functor.Product  as Functor
 import Data.Functor.Reverse  as Functor
+import Data.Hashable (Hashable)
+import qualified Data.HashMap.Lazy as HMap
+import qualified Data.HashSet      as HSet
 import Data.Time
 import Data.Time.Clock.TAI
 import qualified Data.IntMap as IMap
 import qualified Data.IntSet as ISet
 import qualified Data.Map as Map
+import qualified Data.Scientific as Sci
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Data.Text as SText
@@ -87,8 +88,13 @@ import Data.Ratio
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Foreign.Storable
+import GHC.Exts (Down(..))
 import GHC.Generics
 import System.IO.Unsafe
+
+#if MIN_VERSION_base(4,8,0)
+import Numeric.Natural
+#endif
 
 foreign import ccall floatToWord32 :: Float -> Word32
 foreign import ccall word32ToFloat :: Word32 -> Float
@@ -324,6 +330,10 @@ instance Serial Int8 where
   serialize = putWord8 . fromIntegral
   deserialize = liftM fromIntegral getWord8
 
+instance Serial Sci.Scientific where
+  serialize s = serialize (Sci.coefficient s, Sci.base10Exponent s)
+  deserialize = uncurry Sci.scientific <$> deserialize
+
 instance Serial Void where
   serialize = absurd
   deserialize = fail "I looked into the void."
@@ -347,6 +357,14 @@ instance Serial v => Serial (IMap.IntMap v) where
 instance (Serial k, Serial v, Ord k) => Serial (Map.Map k v) where
   serialize = serializeWith serialize
   deserialize = deserializeWith deserialize
+
+instance (Serial k, Serial v, Hashable k, Eq k) => Serial (HMap.HashMap k v) where
+  serialize = serializeWith serialize
+  deserialize = deserializeWith deserialize
+
+instance (Serial v, Hashable v, Eq v) => Serial (HSet.HashSet v) where
+  serialize = serialize . HSet.toList
+  deserialize = HSet.fromList `liftM` deserialize
 
 putVarInt :: (MonadPut m, Integral a, Bits a) => a -> m ()
 putVarInt n
@@ -390,6 +408,15 @@ instance (Bits n, Integral n, Bits (Unsigned n), Integral (Unsigned n)) => Seria
 instance Serial Integer where
   serialize = serialize . VarInt
   deserialize = unVarInt `liftM` deserialize
+
+#if MIN_VERSION_base(4,8,0)
+-- |
+-- >>> runGetL deserialize (runPutL (serialize (10^10::Natural))) :: Natural
+-- 10000000000
+instance Serial Natural where
+  serialize = serialize . VarInt . toInteger
+  deserialize = fromInteger . unVarInt <$> deserialize
+#endif
 
 -- |
 -- >>> (runGetL deserialize $ runPutL $ serialize (1.82::Fixed E2))::Fixed E2
@@ -480,11 +507,9 @@ instance Serial Ordering where
   serialize = serialize . (fromIntegral::Int -> Int8) . fromEnum
   deserialize = (toEnum . (fromIntegral::Int8 -> Int)) `liftM` deserialize
 
-#if MIN_VERSION_base(4, 6, 0)
 instance Serial a => Serial (Down a) where
     serialize (Down a) = serialize a
     deserialize = Down `liftM` deserialize
-#endif
 
 instance Serial Version where
     serialize (Version vb ts) = serialize (fmap VarInt vb, ts)
@@ -698,6 +723,12 @@ instance (Ord k, Serial k) => Serial1 (Map.Map k) where
   serializeWith pv = serializeWith (serializeWith2 serialize pv)
                    . Map.toAscList
   deserializeWith gv = Map.fromList
+               `liftM` deserializeWith (deserializeWith2 deserialize gv)
+
+instance (Hashable k, Eq k, Serial k) => Serial1 (HMap.HashMap k) where
+  serializeWith pv = serializeWith (serializeWith2 serialize pv)
+                   . HMap.toList
+  deserializeWith gv = HMap.fromList
                `liftM` deserializeWith (deserializeWith2 deserialize gv)
 
 serialize1 :: (MonadPut m, Serial1 f, Serial a) => f a -> m ()
