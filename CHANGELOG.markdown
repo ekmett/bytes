@@ -1,9 +1,6 @@
 0.15.1
 ------
 * Drop `Trustworthy` claim in `Data.Bytes.Put` as we now can sometimes infer `Safe`.
-
-0.15.0.2
---------
 * Bump `cereal` bound for 0.5.0.0
 * Add instance `Serial Natural`
 
