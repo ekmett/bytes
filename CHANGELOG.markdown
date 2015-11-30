@@ -1,3 +1,8 @@
+0.15.1
+------
+* Bump support for `cereal`.
+* Drop `Trustworthy` claim, in `Data.Bytes.Put` as we now can sometimes infer `Safe`.
+
 0.15.0.1
 --------
 * Updated github URLs in the .cabal file.

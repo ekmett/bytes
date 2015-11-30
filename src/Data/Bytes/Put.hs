@@ -5,7 +5,6 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE Trustworthy #-}
 --------------------------------------------------------------------
 -- |
 -- Copyright :  (c) Edward Kmett 2013-2015
