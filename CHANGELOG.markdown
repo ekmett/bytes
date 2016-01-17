@@ -1,3 +1,10 @@
+0.15.2
+------
+* Support ghc 8
+* Support `time` 1.6
+* Support `binary` 0.8
+* Support `transformers` 0.5
+
 0.15.1
 ------
 * Drop `Trustworthy` claim in `Data.Bytes.Put` as we now can sometimes infer `Safe`.
