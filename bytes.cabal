@@ -30,6 +30,12 @@ source-repository head
   type: git
   location: git://github.com/ekmett/bytes.git
 
+custom-setup
+  setup-depends:
+    base >= 4 && < 5,
+    filepath >= 1.2,
+    Cabal < 1.25
+
 -- You can disable the doctests test suite with -f-test-doctests
 flag test-doctests
   description: Enable (or disable via f-test-doctests) the doctest suite when
