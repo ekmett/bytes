@@ -1,6 +1,8 @@
 #!/usr/bin/runhaskell
 \begin{code}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
 {-# OPTIONS_GHC -Wall #-}
+
 module Main (main) where
 
 import Data.List ( nub )
@@ -33,12 +35,21 @@ haddockOutputDir flags pkg = destDir where
     Flag x -> x
   destDir = baseDir </> "doc" </> "html" </> display (packageName pkg)
 
+class HackApply f a b c where
+    hackApply :: f -> a -> b -> c
+
+instance HackApply (a -> c) a b c where
+    hackApply f a _ = f a
+
+instance HackApply (a -> b -> c) a b c where
+    hackApply f a b = f a b
+
 generateBuildModule :: Verbosity -> PackageDescription -> LocalBuildInfo -> IO ()
 generateBuildModule verbosity pkg lbi = do
-  let dir = autogenModulesDir lbi
-  createDirectoryIfMissingVerbose verbosity True dir
   withLibLBI pkg lbi $ \_ libcfg -> do
     withTestLBI pkg lbi $ \suite suitecfg -> do
+      let dir = hackApply autogenModulesDir lbi suitecfg :: FilePath
+      createDirectoryIfMissingVerbose verbosity True dir
       rewriteFile (dir </> "Build_" ++ testName suite ++ ".hs") $ unlines
         [ "module Build_" ++ testName suite ++ " where"
         , "deps :: [String]"

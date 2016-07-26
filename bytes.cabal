@@ -30,6 +30,12 @@ source-repository head
   type: git
   location: git://github.com/ekmett/bytes.git
 
+custom-setup
+  setup-depends:
+    Cabal < 1.25,
+    base,
+    filepath
+
 -- You can disable the doctests test suite with -f-test-doctests
 flag test-doctests
   description: Enable (or disable via f-test-doctests) the doctest suite when
@@ -79,7 +85,7 @@ test-suite doctests
   ghc-options:    -Wall -threaded
   hs-source-dirs: tests
 
-  if !flag(test-doctests) || impl(ghc >= 8)
+  if !flag(test-doctests)
     buildable: False
   else
     build-depends:
