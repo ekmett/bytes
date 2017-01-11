@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Main (doctests)
--- Copyright   :  (C) 2012-13 Edward Kmett
+-- Copyright   :  (C) 2012-14 Edward Kmett
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Edward Kmett <ekmett@gmail.com>
 -- Stability   :  provisional
@@ -15,8 +15,10 @@
 -----------------------------------------------------------------------------
 module Main where
 
-import Build_doctests (deps)
+import Build_doctests (component_autogen_dir, build_dir, pkgs, compiler, isOldCompiler)
+#if __GLASGOW_HASKELL__ < 710
 import Control.Applicative
+#endif
 import Control.Monad
 import Data.List
 import System.Directory
@@ -52,15 +54,57 @@ withUnicode m = m
 ##endif
 
 main :: IO ()
-main = withUnicode $ getSources >>= \sources -> doctest $
-    "-isrc"
-  : "-idist/build/autogen"
-  : "-optP-include"
-  : "-optPdist/build/autogen/cabal_macros.h"
-  : "-hide-all-packages"
-  : "-Iincludes"
-  : "dist/build/cbits/i2d.o"
-  : map ("-package="++) (filter (not . ("bytes-" `isPrefixOf`)) deps) ++ sources
+main = withUnicode $ getSources >>= \sources -> do
+    -- Let us find potential databases, cabal new-build
+    home <- getHomeDirectory
+    cwd  <- getCurrentDirectory
+    -- new-build
+    let storedb    = home </> ".cabal" </> "store" </> compiler </> "package.db"
+    let localdb    = cwd </> "dist-newstyle" </> "packagedb" </> compiler
+    let inplacedb  = build_dir </> "package.conf.inplace"
+    -- "old" build, inc sandboxes
+    let inplacedb2 = cwd </> "dist" </> "package.conf.inplace"
+    -- filter out non-existing directories
+    dbs  <- filterM doesPE [storedb,localdb,inplacedb]
+    dbs2 <- filterM doesPE [inplacedb2]
+    {-
+    -- Might be helpful in future:
+    print [storedb,localdb,inplacedb]
+    print dbs
+    print [inplacedb2]
+    print dbs2
+    print [home,cwd,build_dir]
+    print (args sources dbs dbs2)
+    -}
+    -- Run doctests
+    doctest (args sources dbs dbs2)
+  where
+    -- doesPathExist is since directory-1.2.7.0
+    doesPE p = do
+      a <- doesDirectoryExist p
+      b <- doesFileExist p
+      return (a || b)
+
+    -- Distribution.Simple.Program.GHC is only Cabal >=1.16
+    (noUserPkgDbFlag,pkgDbFlag)
+      | isOldCompiler = ("-no-user-package-conf", "-package-conf=")
+      | otherwise     = ("-no-user-package-db", "-package-db=")
+
+    args sources dbs dbs2
+      = "-isrc"
+      -- if there are not cabal new-build databases, we should use user db
+      : (if null dbs then [] else [ noUserPkgDbFlag ])
+      ++ map (pkgDbFlag++) dbs
+      ++ map (pkgDbFlag++) dbs2
+      ++  ("-i" ++ component_autogen_dir)
+      : "-optP-include"
+      : ("-optP" ++ component_autogen_dir ++ "/cabal_macros.h")
+      : "-hide-all-packages"
+#ifdef TRUSTWORTHY
+      : "-DTRUSTWORTHY=1"
+#endif
+      : pkgs
+      ++ sources
 
 getSources :: IO [FilePath]
 getSources = filter (isSuffixOf ".hs") <$> go "src"
