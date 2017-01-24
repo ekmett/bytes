@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Main (doctests)
--- Copyright   :  (C) 2012-13 Edward Kmett
+-- Copyright   :  (C) 2012-14 Edward Kmett
 -- License     :  BSD-style (see the file LICENSE)
 -- Maintainer  :  Edward Kmett <ekmett@gmail.com>
 -- Stability   :  provisional
@@ -15,12 +15,11 @@
 -----------------------------------------------------------------------------
 module Main where
 
-import Build_doctests (deps)
+import Build_doctests (flags, pkgs, module_sources)
+#if __GLASGOW_HASKELL__ < 710
 import Control.Applicative
-import Control.Monad
-import Data.List
-import System.Directory
-import System.FilePath
+#endif
+import Data.Foldable (traverse_)
 import Test.DocTest
 
 ##if defined(mingw32_HOST_OS)
@@ -52,24 +51,8 @@ withUnicode m = m
 ##endif
 
 main :: IO ()
-main = withUnicode $ getSources >>= \sources -> doctest $
-    "-isrc"
-  : "-idist/build/autogen"
-  : "-optP-include"
-  : "-optPdist/build/autogen/cabal_macros.h"
-  : "-hide-all-packages"
-  : "-Iincludes"
-  : "dist/build/cbits/i2d.o"
-  : map ("-package="++) (filter (not . ("bytes-" `isPrefixOf`)) deps) ++ sources
-
-getSources :: IO [FilePath]
-getSources = filter (isSuffixOf ".hs") <$> go "src"
+main = withUnicode $ do
+    traverse_ putStrLn args
+    doctest args
   where
-    go dir = do
-      (dirs, files) <- getFilesAndDirectories dir
-      (files ++) . concat <$> mapM go dirs
-
-getFilesAndDirectories :: FilePath -> IO ([FilePath], [FilePath])
-getFilesAndDirectories dir = do
-  c <- map (dir </>) . filter (`notElem` ["..", "."]) <$> getDirectoryContents dir
-  (,) <$> filterM doesDirectoryExist c <*> filterM doesFileExist c
+    args = flags ++ pkgs ++ module_sources
