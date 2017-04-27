@@ -1,6 +1,6 @@
 name:          bytes
 category:      Data, Serialization
-version:       0.15.2
+version:       0.15.3
 license:       BSD3
 cabal-version: >= 1.8
 license-file:  LICENSE
@@ -11,7 +11,7 @@ homepage:      https://github.com/ekmett/bytes
 bug-reports:   https://github.com/ekmett/bytes/issues
 copyright:     Copyright (C) 2013-2015 Edward A. Kmett
 build-type:    Custom
-tested-with:   GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.2
+tested-with:   GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3, GHC == 8.0.2, GHC == 8.2.1
 synopsis:      Sharing code for serialization between binary and cereal
 description:   Sharing code for serialization between binary and cereal
 
