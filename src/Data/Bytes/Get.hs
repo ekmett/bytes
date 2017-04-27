@@ -89,7 +89,7 @@ class (Integral (Remaining m), Monad m, Applicative m) => MonadGet m where
   -- Note that this forces the rest of the input.
   remaining :: m (Remaining m)
 #ifndef HLINT
-  default remaining :: (MonadTrans t, Monad n, MonadGet n, m ~ t n, Remaining m ~ Remaining n)
+  default remaining :: (MonadTrans t, MonadGet n, m ~ t n, Remaining m ~ Remaining n)
                     => m (Remaining m)
   remaining = lift remaining
 #endif
