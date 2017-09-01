@@ -182,7 +182,7 @@ class (Integral (Remaining m), Monad m, Applicative m) => MonadGet m where
   getWord64le = lift getWord64le
 #endif
 
-  -- | /O(1)./ Read a 'Word64' in native host order and host endianess.
+  -- | /O(1)./ Read a 'Word64' in native host order and host endianness.
   getWord64host :: m Word64
 #ifndef HLINT
   default getWord64host :: (MonadTrans t, MonadGet n, m ~ t n) => m Word64
