@@ -1,3 +1,7 @@
+0.15.4 [2018-04-05]
+-------------------
+* Use a significantly simpler `Setup.hs` script.
+
 0.15.3
 ------
 * Support GHC 8.2

@@ -1,6 +1,6 @@
 name:          bytes
 category:      Data, Serialization
-version:       0.15.3
+version:       0.15.4
 license:       BSD3
 cabal-version: >= 1.8
 license-file:  LICENSE
