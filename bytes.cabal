@@ -66,6 +66,9 @@ library
   if impl(ghc >= 7.4 && < 7.6)
     build-depends: ghc-prim
 
+  if impl(ghc < 8.0)
+    build-depends: semigroups >= 0.5      && < 1
+
   exposed-modules:
     Data.Bytes.Get
     Data.Bytes.Put
