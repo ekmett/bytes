@@ -68,6 +68,7 @@ import Data.Functor.Reverse  as Functor
 import Data.Hashable (Hashable)
 import qualified Data.HashMap.Lazy as HMap
 import qualified Data.HashSet      as HSet
+import qualified Data.List.NonEmpty as NEL
 import Data.Time
 import Data.Time.Clock.TAI
 import qualified Data.IntMap as IMap
@@ -343,6 +344,10 @@ instance Serial ISet.IntSet where
   deserialize = ISet.fromList `liftM` deserialize
 
 instance Serial a => Serial (Seq.Seq a) where
+  serialize = serializeWith serialize
+  deserialize = deserializeWith deserialize
+
+instance Serial a => Serial (NEL.NonEmpty a) where
   serialize = serializeWith serialize
   deserialize = deserializeWith deserialize
 
@@ -704,6 +709,10 @@ instance (Serial a, Serial b, Serial c, Serial d) => Serial1 ((,,,,) a b c d) wh
 instance Serial1 Seq.Seq where
   serializeWith pv = serializeWith pv . F.toList
   deserializeWith gv = Seq.fromList `liftM` deserializeWith gv
+
+instance Serial1 NEL.NonEmpty where
+  serializeWith pv = serializeWith pv . F.toList
+  deserializeWith gv = NEL.fromList `liftM` deserializeWith gv
 
 {-
 instance Serial1 Set.Set where
