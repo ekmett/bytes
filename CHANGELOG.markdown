@@ -1,3 +1,7 @@
+next [????.??.??]
+-----------------
+* Add `Serial(1)` instances for `NonEmpty`.
+
 0.15.4 [2018-04-05]
 -------------------
 * Use a significantly simpler `Setup.hs` script.
