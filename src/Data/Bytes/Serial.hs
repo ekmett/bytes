@@ -7,8 +7,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 704
+#if defined(__GLASGOW_HASKELL__)
+# if __GLASGOW_HASKELL__ >= 704
 {-# LANGUAGE Trustworthy #-}
+# endif
+# if __GLASGOW_HASKELL__ >= 708
+{-# LANGUAGE EmptyCase #-}
+# endif
 #endif
 #ifndef MIN_VERSION_base
 #define MIN_VERSION_base(x,y,z) 1
@@ -594,7 +599,12 @@ instance GSerial U1 where
   gdeserialize = return U1
 
 instance GSerial V1 where
-  gserialize _ = fail "I looked into the void."
+  gserialize x =
+#if __GLASGOW_HASKELL__ >= 708
+    case x of {}
+#else
+    x `seq` error "I looked into the void."
+#endif
   gdeserialize = fail "I looked into the void."
 
 instance (GSerial f, GSerial g) => GSerial (f :*: g) where
@@ -772,7 +782,12 @@ instance GSerial1 U1 where
   gdeserializeWith _  = return U1
 
 instance GSerial1 V1 where
-  gserializeWith _   = fail "I looked into the void."
+  gserializeWith _ x =
+#if __GLASGOW_HASKELL__ >= 708
+    case x of {}
+#else
+    x `seq` error "I looked into the void."
+#endif
   gdeserializeWith _ = fail "I looked into the void."
 
 instance (GSerial1 f, GSerial1 g) => GSerial1 (f :*: g) where
