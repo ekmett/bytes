@@ -28,6 +28,9 @@ module Data.Bytes.Get
 #if __GLASGOW_HASKELL__ < 710
 import Control.Applicative
 #endif
+#if !MIN_VERSION_base(4,13,0)
+import Control.Monad.Fail (MonadFail)
+#endif
 import Control.Monad.Reader
 import Control.Monad.Trans.Except as Except
 import Control.Monad.RWS.Lazy as Lazy
@@ -43,7 +46,7 @@ import Data.Int
 import qualified Data.Serialize.Get as S
 import Data.Word
 
-class (Integral (Remaining m), Monad m, Applicative m) => MonadGet m where
+class (Integral (Remaining m), MonadFail m, Applicative m) => MonadGet m where
   -- | An 'Integral' number type used for unchecked skips and counting.
   type Remaining m :: *
 
