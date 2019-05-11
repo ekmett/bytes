@@ -1,3 +1,9 @@
+0.16 [xxxx.xx.xx]
+-----------------
+
+* Support GHC-8.8
+* `MonadGet now requires `MonadFail` as a superclass
+
 0.15.5 [2018.07.03]
 -------------------
 * Add `Serial(1)` instances for `NonEmpty`.
