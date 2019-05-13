@@ -43,7 +43,11 @@ import Data.Int
 import qualified Data.Serialize.Get as S
 import Data.Word
 
-class (Integral (Remaining m), Monad m, Applicative m) => MonadGet m where
+import Control.Monad.Trans.Instances ()
+import Data.Binary.Orphans ()
+import qualified Control.Monad.Fail as Fail
+
+class (Integral (Remaining m), Fail.MonadFail m, Applicative m) => MonadGet m where
   -- | An 'Integral' number type used for unchecked skips and counting.
   type Remaining m :: *
 
@@ -211,7 +215,7 @@ instance MonadGet B.Get where
   {-# INLINE lookAheadE #-}
   ensure n = do
     bs <- lookAhead $ getByteString n
-    unless (Strict.length bs >= n) $ fail "ensure: Required more bytes"
+    unless (Strict.length bs >= n) $ Fail.fail "ensure: Required more bytes"
     return bs
   {-# INLINE ensure #-}
   getBytes = B.getByteString
