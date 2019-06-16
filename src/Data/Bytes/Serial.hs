@@ -55,6 +55,7 @@ module Data.Bytes.Serial
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Fail as MonadFail
 import qualified Data.Foldable as F
 import Data.Bytes.Get
 import Data.Bytes.Put
@@ -279,7 +280,7 @@ restore :: forall m a. (MonadGet m, Storable a) => m a
 restore = do
   let required = sizeOf (undefined :: a)
   PS fp o n <- getByteString required
-  unless (n >= required) $ fail "restore: Required more bytes"
+  unless (n >= required) $ MonadFail.fail "restore: Required more bytes"
   return $ unsafePerformIO $ withForeignPtr fp $ \p -> peekByteOff p o
 
 instance Serial Double where
