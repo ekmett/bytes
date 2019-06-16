@@ -55,7 +55,7 @@ module Data.Bytes.Serial
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Fail as MonadFail
+import qualified Control.Monad.Fail as MonadFail
 import qualified Data.Foldable as F
 import Data.Bytes.Get
 import Data.Bytes.Put
