@@ -343,7 +343,7 @@ instance Serial Sci.Scientific where
 
 instance Serial Void where
   serialize = absurd
-  deserialize = fail "I looked into the void."
+  deserialize = MonadFail.fail "I looked into the void."
 
 instance Serial ISet.IntSet where
   serialize = serialize . ISet.toAscList
@@ -606,7 +606,7 @@ instance GSerial V1 where
 #else
     x `seq` error "I looked into the void."
 #endif
-  gdeserialize = fail "I looked into the void."
+  gdeserialize = MonadFail.fail "I looked into the void."
 
 instance (GSerial f, GSerial g) => GSerial (f :*: g) where
   gserialize (f :*: g) = do
@@ -620,7 +620,7 @@ instance (GSerial f, GSerial g) => GSerial (f :+: g) where
   gdeserialize = getWord8 >>= \a -> case a of
     0 -> liftM L1 gdeserialize
     1 -> liftM R1 gdeserialize
-    _ -> fail "Missing case"
+    _ -> MonadFail.fail "Missing case"
 
 instance GSerial f => GSerial (M1 i c f) where
   gserialize (M1 x) = gserialize x
@@ -789,7 +789,7 @@ instance GSerial1 V1 where
 #else
     x `seq` error "I looked into the void."
 #endif
-  gdeserializeWith _ = fail "I looked into the void."
+  gdeserializeWith _ = MonadFail.fail "I looked into the void."
 
 instance (GSerial1 f, GSerial1 g) => GSerial1 (f :*: g) where
   gserializeWith f (a :*: b) = gserializeWith f a >> gserializeWith f b
@@ -801,7 +801,7 @@ instance (GSerial1 f, GSerial1 g) => GSerial1 (f :+: g) where
   gdeserializeWith m = getWord8 >>= \a -> case a of
     0 -> liftM L1 (gdeserializeWith m)
     1 -> liftM R1 (gdeserializeWith m)
-    _ -> fail "Missing case"
+    _ -> MonadFail.fail "Missing case"
 
 instance (Serial1 f, GSerial1 g) => GSerial1 (f :.: g) where
   gserializeWith f (Comp1 m) = serializeWith (gserializeWith f) m
@@ -837,7 +837,7 @@ instance Serial2 Either where
   deserializeWith2 m n = getWord8 >>= \a -> case a of
     0 -> liftM Left m
     1 -> liftM Right n
-    _ -> fail "Missing case"
+    _ -> MonadFail.fail "Missing case"
 
 instance Serial2 (,) where
   serializeWith2 f g (a, b) = f a >> g b
