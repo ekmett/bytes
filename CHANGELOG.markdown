@@ -1,8 +1,7 @@
-0.16 [xxxx.xx.xx]
+0.16 [2019.08.27]
 -----------------
-
-* Support GHC-8.8
-* `MonadGet now requires `MonadFail` as a superclass
+* Support GHC-8.8.
+* `MonadGet` now requires `MonadFail` as a superclass.
 
 0.15.5 [2018.07.03]
 -------------------
