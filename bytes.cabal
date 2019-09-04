@@ -27,6 +27,7 @@ extra-source-files:
   .travis.yml
   .ghci
   .gitignore
+  .hlint.yaml
   .vim.custom
   travis/cabal-apt-install
   travis/config
