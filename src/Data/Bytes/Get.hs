@@ -3,6 +3,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE Trustworthy #-}
+#if MIN_VERSION_base(4,12,0)
+{-# LANGUAGE QuantifiedConstraints#-}
+#endif
+
 {-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
 --------------------------------------------------------------------
 -- |
@@ -46,8 +50,15 @@ import Data.Word
 import Control.Monad.Trans.Instances ()
 import Data.Binary.Orphans ()
 import qualified Control.Monad.Fail as Fail
+#if MIN_VERSION_base(4,12,0)
+import Data.Coerce(Coercible)
+#endif
 
-class (Integral (Remaining m), Fail.MonadFail m, Applicative m) => MonadGet m where
+class (
+#if MIN_VERSION_base(4,12,0)
+    forall a b. Coercible a b => Coercible (m a) (m b),
+#endif
+     Integral (Remaining m), Fail.MonadFail m, Applicative m) => MonadGet m where
   -- | An 'Integral' number type used for unchecked skips and counting.
   type Remaining m :: *
 
