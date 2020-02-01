@@ -56,6 +56,9 @@ import Data.Coerce (Coercible)
 
 class (
 #if __GLASGOW_HASKELL__ >= 806
+     -- This superclass exists for the benefit of Serial, which uses MonadGet
+     -- in one of its methods. Giving MonadGet this superclass allows Serial to
+     -- be derived using GeneralizedNewtypeDeriving/DerivingVia.
      forall a b. Coercible a b => Coercible (m a) (m b),
 #endif
      Integral (Remaining m), Fail.MonadFail m, Applicative m) => MonadGet m where
