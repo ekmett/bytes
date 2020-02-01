@@ -3,8 +3,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE Trustworthy #-}
-#if MIN_VERSION_base(4,12,0)
-{-# LANGUAGE QuantifiedConstraints#-}
+#if __GLASGOW_HASKELL__ >= 806
+{-# LANGUAGE QuantifiedConstraints #-}
 #endif
 
 {-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
@@ -50,13 +50,13 @@ import Data.Word
 import Control.Monad.Trans.Instances ()
 import Data.Binary.Orphans ()
 import qualified Control.Monad.Fail as Fail
-#if MIN_VERSION_base(4,12,0)
-import Data.Coerce(Coercible)
+#if __GLASGOW_HASKELL__ >= 806
+import Data.Coerce (Coercible)
 #endif
 
 class (
-#if MIN_VERSION_base(4,12,0)
-    forall a b. Coercible a b => Coercible (m a) (m b),
+#if __GLASGOW_HASKELL__ >= 806
+     forall a b. Coercible a b => Coercible (m a) (m b),
 #endif
      Integral (Remaining m), Fail.MonadFail m, Applicative m) => MonadGet m where
   -- | An 'Integral' number type used for unchecked skips and counting.
