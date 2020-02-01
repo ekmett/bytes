@@ -1,3 +1,11 @@
+next [????.??.??]
+-----------------
+* Give `MonadGet m` a superclass of
+  `forall a b. Coercible a b => Coercible (m a) (m b)` when built against
+  GHC 8.6 or later. This allows `Serial` instances to be derived using
+  `GeneralizedNewtypeDeriving` or `DerivingVia` when using in tandem with
+  `StandaloneDeriving`.
+
 0.16 [2019.08.27]
 -----------------
 * Support GHC-8.8.
