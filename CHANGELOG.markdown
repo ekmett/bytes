@@ -1,4 +1,4 @@
-next [????.??.??]
+0.17 [2020.02.03]
 -----------------
 * Give `MonadGet m` a superclass of
   `forall a b. Coercible a b => Coercible (m a) (m b)` when built against
