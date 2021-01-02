@@ -10,7 +10,7 @@ stability:     experimental
 homepage:      https://github.com/ekmett/bytes
 bug-reports:   https://github.com/ekmett/bytes/issues
 copyright:     Copyright (C) 2013-2015 Edward A. Kmett
-build-type:    Custom
+build-type:    Simple
 tested-with:   GHC == 7.4.2
              , GHC == 7.6.3
              , GHC == 7.8.4
@@ -19,42 +19,22 @@ tested-with:   GHC == 7.4.2
              , GHC == 8.2.2
              , GHC == 8.4.4
              , GHC == 8.6.5
-             , GHC == 8.8.3
-             , GHC == 8.10.1
+             , GHC == 8.8.4
+             , GHC == 8.10.3
 synopsis:      Sharing code for serialization between binary and cereal
 description:   Sharing code for serialization between binary and cereal.
 
 extra-source-files:
-  .travis.yml
-  .ghci
   .gitignore
   .hlint.yaml
   .vim.custom
-  travis/cabal-apt-install
-  travis/config
   AUTHORS.markdown
   README.markdown
   CHANGELOG.markdown
-  Warning.hs
 
 source-repository head
   type: git
   location: git://github.com/ekmett/bytes.git
-
--- You can disable the doctests test suite with -f-test-doctests
-flag test-doctests
-  description: Enable (or disable via f-test-doctests) the doctest suite when
-               using the enable-tests option for cabal.
-  default: True
-  manual: True
-
-custom-setup
-  -- any Cabal should do
-  setup-depends:
-    base          >= 4.5 && <5,
-    Cabal         >= 1.14,
-    cabal-doctest >= 1 && <1.1
-
 
 library
   build-depends:
@@ -77,6 +57,9 @@ library
   if impl(ghc >= 7.4 && < 7.6)
     build-depends: ghc-prim
 
+  if !impl(ghc >= 7.10)
+    build-depends: nats >= 1.1.2   && < 1.2
+
   if !impl(ghc >= 8.0)
     build-depends: semigroups >= 0.5      && < 1
                  , fail       >= 4.9.0.0  && < 4.10
@@ -94,20 +77,3 @@ library
   c-sources: cbits/i2d.c
   hs-source-dirs: src
   default-language: Haskell2010
-
-test-suite doctests
-  type:           exitcode-stdio-1.0
-  main-is:        doctests.hs
-  ghc-options:    -Wall -threaded
-  hs-source-dirs: tests
-  default-language: Haskell2010
-
-  if !flag(test-doctests)
-    buildable: False
-  else
-    build-depends:
-      base,
-      bytes,
-      directory      >= 1.0,
-      doctest        >= 0.11.1 && <0.18,
-      filepath       >= 1.2
