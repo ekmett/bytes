@@ -98,15 +98,22 @@ import Foreign.Storable
 import GHC.Exts (Down(..))
 import GHC.Generics
 import System.IO.Unsafe
-
-#if MIN_VERSION_base(4,8,0)
 import Numeric.Natural
-#endif
 
 foreign import ccall floatToWord32 :: Float -> Word32
 foreign import ccall word32ToFloat :: Word32 -> Float
 foreign import ccall doubleToWord64 :: Double -> Word64
 foreign import ccall word64ToDouble :: Word64 -> Double
+
+-- $setup
+-- >>> import Data.Bytes.Get
+-- >>> import Data.Bytes.Put
+-- >>> import Data.Bytes.VarInt
+-- >>> import Numeric.Natural
+-- >>> import Data.Time
+-- >>> import Data.Time.Clock
+-- >>> import Data.Time.Clock.TAI
+-- >>> import Data.Ratio (Ratio, (%))
 
 ------------------------------------------------------------------------------
 -- Endianness-Dependant Serialization
@@ -420,14 +427,12 @@ instance Serial Integer where
   serialize = serialize . VarInt
   deserialize = unVarInt `liftM` deserialize
 
-#if MIN_VERSION_base(4,8,0)
 -- |
 -- >>> runGetL deserialize (runPutL (serialize (10^10::Natural))) :: Natural
 -- 10000000000
 instance Serial Natural where
   serialize = serialize . VarInt . toInteger
   deserialize = fromInteger . unVarInt <$> deserialize
-#endif
 
 -- |
 -- >>> (runGetL deserialize $ runPutL $ serialize (1.82::Fixed E2))::Fixed E2

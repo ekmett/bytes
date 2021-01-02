@@ -1,7 +1,7 @@
 bytes
 =====
 
-[![Hackage](https://img.shields.io/hackage/v/bytes.svg)](https://hackage.haskell.org/package/bytes) [![Build Status](https://secure.travis-ci.org/ekmett/bytes.png?branch=master)](http://travis-ci.org/ekmett/bytes)
+[![Hackage](https://img.shields.io/hackage/v/bytes.svg)](https://hackage.haskell.org/package/bytes) [![Build Status](https://github.com/ekmett/bytes/workflows/Haskell-CI/badge.svg)](https://github.com/ekmett/bytes/actions?query=workflow%3AHaskell-CI)
 
 This package provides a simple compatibility shim that lets you work with both `binary` and `cereal` with one chunk of serialization code.
 
