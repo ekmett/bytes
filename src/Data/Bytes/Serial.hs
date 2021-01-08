@@ -109,11 +109,13 @@ foreign import ccall word64ToDouble :: Word64 -> Double
 -- >>> import Data.Bytes.Get
 -- >>> import Data.Bytes.Put
 -- >>> import Data.Bytes.VarInt
--- >>> import Numeric.Natural
+-- >>> import Data.Fixed
+-- >>> import Data.Ratio (Ratio, (%))
 -- >>> import Data.Time
 -- >>> import Data.Time.Clock
 -- >>> import Data.Time.Clock.TAI
--- >>> import Data.Ratio (Ratio, (%))
+-- >>> import Data.Word
+-- >>> import Numeric.Natural
 
 ------------------------------------------------------------------------------
 -- Endianness-Dependant Serialization
@@ -400,11 +402,6 @@ getVarInt n
   | otherwise = return $ fromIntegral n
 {-# INLINE getVarInt #-}
 
--- |
--- $setup
--- >>> import Data.Word
--- >>> import Data.Fixed
--- >>> import Data.Bytes.Serial
 
 -- | Integer/Word types serialized to base-128 variable-width ints.
 --
