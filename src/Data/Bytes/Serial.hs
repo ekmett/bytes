@@ -288,7 +288,13 @@ store a = putByteString bs
 restore :: forall m a. (MonadGet m, Storable a) => m a
 restore = do
   let required = sizeOf (undefined :: a)
-  PS fp o n <- getByteString required
+#if MIN_VERSION_bytestring(0,11,0)
+  let o = 0
+  BS fp n
+#else
+  PS fp o n
+#endif
+    <- getByteString required
   unless (n >= required) $ MonadFail.fail "restore: Required more bytes"
   return $ unsafePerformIO $ withForeignPtr fp $ \p -> peekByteOff p o
 
