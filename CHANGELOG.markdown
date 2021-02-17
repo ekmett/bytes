@@ -1,10 +1,10 @@
-next [yyyy.mm.dd]
------------------
+0.17.1 [2021.02.17]
+-------------------
 * The build-type has been changed from `Custom` to `Simple`.
   To achieve this, the `doctests` test suite has been removed in favor of using
   [`cabal-docspec`](https://github.com/phadej/cabal-extras/tree/master/cabal-docspec)
   to run the doctests.
-* Provide `Serial Natural` instance unconditionally
+* Provide the `Serial Natural` instance unconditionally.
 * Allow building with `bytestring-0.11.*`.
 
 0.17 [2020.02.03]
