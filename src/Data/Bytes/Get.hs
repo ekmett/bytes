@@ -33,7 +33,8 @@ module Data.Bytes.Get
 #if __GLASGOW_HASKELL__ < 710
 import Control.Applicative
 #endif
-import Control.Monad.Reader
+import Control.Monad (liftM, unless)
+import Control.Monad.Reader (ReaderT(..))
 import Control.Monad.Trans.Except as Except
 import Control.Monad.RWS.Lazy as Lazy
 import Control.Monad.RWS.Strict as Strict
