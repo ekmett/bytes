@@ -32,6 +32,7 @@ module Data.Bytes.Get
 
 #if __GLASGOW_HASKELL__ < 710
 import Control.Applicative
+import Data.Monoid (Monoid(..))
 #endif
 import Control.Monad (liftM, unless)
 import Control.Monad.Trans.Class (MonadTrans(..))
