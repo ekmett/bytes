@@ -1,3 +1,8 @@
+next [????.??.??]
+-----------------
+* Remove `mtl` dependency in favor `transformers`, as `bytes` was only using
+  `mtl` for its `transformers` re-exports.
+
 0.17.2 [2022.05.07]
 -------------------
 * Allow building with `mtl-2.3.*` and `transformers-0.6.*`.

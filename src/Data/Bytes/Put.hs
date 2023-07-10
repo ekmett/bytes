@@ -29,14 +29,15 @@ module Data.Bytes.Put
 #if __GLASGOW_HASKELL__ < 710
 import Control.Applicative
 #endif
-import Control.Monad.Reader
+import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Trans.Except as Except
-import Control.Monad.RWS.Lazy as Lazy
-import Control.Monad.RWS.Strict as Strict
-import Control.Monad.State.Lazy as Lazy
-import Control.Monad.State.Strict as Strict
-import Control.Monad.Writer.Lazy as Lazy
-import Control.Monad.Writer.Strict as Strict
+import Control.Monad.Trans.Reader (ReaderT(..))
+import Control.Monad.Trans.RWS.Lazy as Lazy
+import Control.Monad.Trans.RWS.Strict as Strict
+import Control.Monad.Trans.State.Lazy as Lazy
+import Control.Monad.Trans.State.Strict as Strict
+import Control.Monad.Trans.Writer.Lazy as Lazy
+import Control.Monad.Trans.Writer.Strict as Strict
 import qualified Data.Binary.Put as B
 import Data.ByteString as Strict
 import Data.ByteString.Lazy as Lazy

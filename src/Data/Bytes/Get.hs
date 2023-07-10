@@ -34,14 +34,15 @@ module Data.Bytes.Get
 import Control.Applicative
 #endif
 import Control.Monad (liftM, unless)
-import Control.Monad.Reader (ReaderT(..))
+import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Trans.Except as Except
-import Control.Monad.RWS.Lazy as Lazy
-import Control.Monad.RWS.Strict as Strict
-import Control.Monad.State.Lazy as Lazy
-import Control.Monad.State.Strict as Strict
-import Control.Monad.Writer.Lazy as Lazy
-import Control.Monad.Writer.Strict as Strict
+import Control.Monad.Trans.Reader (ReaderT(..))
+import Control.Monad.Trans.RWS.Lazy as Lazy
+import Control.Monad.Trans.RWS.Strict as Strict
+import Control.Monad.Trans.State.Lazy as Lazy
+import Control.Monad.Trans.State.Strict as Strict
+import Control.Monad.Trans.Writer.Lazy as Lazy
+import Control.Monad.Trans.Writer.Strict as Strict
 import qualified Data.Binary.Get as B
 import qualified Data.ByteString.Lazy as Lazy
 import qualified Data.ByteString as Strict
