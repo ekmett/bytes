@@ -1,3 +1,7 @@
+next [????.??.??]
+-----------------
+* Require building with GHC 8.0 or later.
+
 0.17.3 [2023.08.06]
 -------------------
 * Remove `mtl` dependency in favor `transformers`, as `bytes` was only using

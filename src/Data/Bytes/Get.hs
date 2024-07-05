@@ -8,7 +8,7 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 #endif
 
-{-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
+{-# OPTIONS_GHC -Wno-warnings-deprecations #-}
 --------------------------------------------------------------------
 -- |
 -- Copyright :  (c) Edward Kmett 2013-2015
@@ -30,10 +30,6 @@ module Data.Bytes.Get
   , runGetS
   ) where
 
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative
-import Data.Monoid (Monoid(..))
-#endif
 import Control.Monad (liftM, unless)
 import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Trans.Except as Except

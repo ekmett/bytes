@@ -608,12 +608,7 @@ instance GSerial U1 where
   gdeserialize = return U1
 
 instance GSerial V1 where
-  gserialize x =
-#if __GLASGOW_HASKELL__ >= 708
-    case x of {}
-#else
-    x `seq` error "I looked into the void."
-#endif
+  gserialize x = case x of {}
   gdeserialize = MonadFail.fail "I looked into the void."
 
 instance (GSerial f, GSerial g) => GSerial (f :*: g) where
@@ -791,12 +786,7 @@ instance GSerial1 U1 where
   gdeserializeWith _  = return U1
 
 instance GSerial1 V1 where
-  gserializeWith _ x =
-#if __GLASGOW_HASKELL__ >= 708
-    case x of {}
-#else
-    x `seq` error "I looked into the void."
-#endif
+  gserializeWith _ x = case x of {}
   gdeserializeWith _ = MonadFail.fail "I looked into the void."
 
 instance (GSerial1 f, GSerial1 g) => GSerial1 (f :*: g) where

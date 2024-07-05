@@ -26,10 +26,6 @@ module Data.Bytes.Put
   , runPutS
   ) where
 
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative
-import Data.Monoid (Monoid(..))
-#endif
 import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.Trans.Except as Except
 import Control.Monad.Trans.Reader (ReaderT(..))
