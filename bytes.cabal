@@ -49,7 +49,7 @@ library
     containers                >= 0.3      && < 1,
     hashable                  >= 1.0.1.1  && < 1.6,
     text                      >= 0.2      && < 2.2,
-    time                      >= 1.2      && < 1.13,
+    time                      >= 1.2      && < 1.15,
     transformers              >= 0.2      && < 0.7,
     transformers-compat       >= 0.6.5    && < 1,
     unordered-containers      >= 0.2      && < 0.3,
