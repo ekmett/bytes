@@ -1,3 +1,7 @@
+next [????.??.??]
+-----------------
+* Remove unused `void` dependency.
+
 0.17.4 [2024.12.04]
 -------------------
 * Require building with GHC 8.0 or later.

@@ -53,8 +53,7 @@ library
     transformers              >= 0.2      && < 0.7,
     transformers-compat       >= 0.6.5    && < 1,
     unordered-containers      >= 0.2      && < 0.3,
-    scientific                >= 0.0      && < 1,
-    void                      >= 0.6      && < 1
+    scientific                >= 0.0      && < 1
 
   exposed-modules:
     Data.Bytes.Get
