@@ -1,5 +1,5 @@
-next [????.??.??]
------------------
+0.17.5 [2026.01.10]
+-------------------
 * Allow building with `time-1.15.*` (GHC 9.14).
 * Remove unused `void` dependency.
 
