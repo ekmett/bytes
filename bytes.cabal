@@ -24,6 +24,7 @@ tested-with:   GHC == 8.0.2
              , GHC == 9.8.4
              , GHC == 9.10.3
              , GHC == 9.12.2
+             , GHC == 9.14.1
 synopsis:      Sharing code for serialization between binary and cereal
 description:   Sharing code for serialization between binary and cereal.
 
@@ -49,7 +50,7 @@ library
     containers                >= 0.3      && < 1,
     hashable                  >= 1.0.1.1  && < 1.6,
     text                      >= 0.2      && < 2.2,
-    time                      >= 1.2      && < 1.15,
+    time                      >= 1.2      && < 1.16,
     transformers              >= 0.2      && < 0.7,
     transformers-compat       >= 0.6.5    && < 1,
     unordered-containers      >= 0.2      && < 0.3,
